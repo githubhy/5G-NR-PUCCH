@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Function definitions for colored output
+prRed() {
+    echo -e "\033[91m $1\033[00m"
+}
+
+prGreen() {
+    echo -e "\033[92m $1\033[00m"
+}
+
+prYellow() {
+    echo -e "\033[93m $1\033[00m"
+}
+
+prLightPurple() {
+    echo -e "\033[94m $1\033[00m"
+}
+
+prPurple() {
+    echo -e "\033[95m $1\033[00m"
+}
+
+prCyan() {
+    echo -e "\033[96m $1\033[00m"
+}
+
+prLightGray() {
+    echo -e "\033[97m $1\033[00m"
+}
+
+prBlack() {
+    echo -e "\033[98m $1\033[00m"
+}
+
+COMPILED_FOLDER="."
+MODULE_FOLDER="."
+
+prLightPurple "Auto compile verilog script"
+prCyan "by Dao Quyet"
+
+module_name="iverilog_output_file"
+
+file_argvs=()
+defines=()
+
+# Parse the arguments
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        -D*)
+            defines+=("${1#-D}")
+            shift
+            ;;
+        *)
+            file_argvs+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Print the defines list
+if [ ${#defines[@]} -eq 0 ]; then
+    prYellow "No defines found (-D flags, EX: -DHELLO -DWORLD)"
+else
+    prYellow "Defines list:"
+    for define in "${defines[@]}"; do
+        prYellow "$define"
+    done
+fi
+
+# Print the file arguments list
+if [ ${#file_argvs[@]} -eq 0 ]; then
+    prRed "No file arguments found"
+else
+    prPurple "File arguments list:"
+    for file_argv in "${file_argvs[@]}"; do
+        prPurple "$file_argv"
+    done
+fi
+
+compiled_file_path="${COMPILED_FOLDER}/${module_name}"
+
+# Build the iverilog command
+iverilog_cmd="iverilog -g2012 -o ${compiled_file_path}"
+
+# Add define arguments
+for define in "${defines[@]}"; do
+    iverilog_cmd+=" -D${define}"
+done
+
+# Add file arguments
+for file_argv in "${file_argvs[@]}"; do
+    prPurple "Included '${MODULE_FOLDER}/${file_argv}'"
+    iverilog_cmd+=" ${MODULE_FOLDER}/${file_argv}"
+done
+
+# Print the full iverilog command for debugging
+prCyan "iverilog command: $iverilog_cmd"
+
+# vvp to generate simulate file
+vvp_cmd="vvp ${compiled_file_path}"
+
+# Execute commands
+if $iverilog_cmd && $vvp_cmd; then
+    # Clean compiled file
+    rm -f "${compiled_file_path}"
+    prGreen "COMPILED SUCCESSFULLY!"
+else
+    prRed "FAILED TO COMPILE!!!"
+fi

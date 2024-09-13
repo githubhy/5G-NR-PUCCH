@@ -1,0 +1,1 @@
+-I/Applications/CODESTUFF/GoldSeqHDL/pucch0/rtl -I/Applications/CODESTUFF/GoldSeqHDL/common -I/Applications/CODESTUFF/GoldSeqHDL/pucch1/rtl --timing
