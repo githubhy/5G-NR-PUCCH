@@ -31,7 +31,7 @@ module pucch (
     input [7:0] i_nslot,  //! (0-159)
     input [9:0] i_nid,    //! (0-1023)
 
-    input [2:0] i_occi,  //! (0-nSF0 - 1) with nSF0 = floor(nPUCCHSym/2)
+    input [2:0] i_occi,  //! occi < nSF0 with nSF0 = floor(nPUCCHSym/2)
 
     output reg signed [15:0] o_pucch_re,  // sfix16_En15
     output reg signed [15:0] o_pucch_im,  // sfix16_En15
@@ -134,7 +134,7 @@ module pucch (
   qpsk_cyc #(
       .CYC_DIV(CYC_DIV)
   ) qpsk_cyc_24 (
-      .i_b({uciIn[0], uciIn[1]}),
+      .i_b({uciIn[1], uciIn[0]}),
       .o_cyc_part(d_qpsk)
   );
 
@@ -175,24 +175,7 @@ module pucch (
           if (alpha_valid) begin
             alpha_index <= alpha_index + 1;
             seq_index   <= 0;
-
-
-            case (i_pucch_format)
-              0: begin
-                if (alpha_index >= symStart) begin
-                  get_alpha <= get_alpha + 1;
-                end
-              end
-              1: begin
-                // Only get alpha at odd index
-                if ((alpha_index >= symStart) && (alpha_index[0] == 1)) begin
-                  get_alpha <= get_alpha + 1;
-                end
-              end
-              default: begin
-
-              end
-            endcase
+            if (done_next_alpha) get_alpha <= get_alpha + 1;
           end
         end
         GEN_SEQUENCE: begin
@@ -233,6 +216,9 @@ module pucch (
     alpha_start = 0;
     alpha_get = 0;
 
+    spread_start = 0;
+    spread_next = 0;
+
     case (cstate)
       IDLE: begin
         if (i_start) nstate = (pucch_empty_seq ? DONE : START_ALPHA);
@@ -240,9 +226,11 @@ module pucch (
       START_ALPHA: begin
         nstate = NEXT_ALPHA;
         alpha_start = 1;
+        spread_start = 1;
       end
       NEXT_ALPHA: begin
         alpha_get = 1;
+
         if (alpha_valid) begin
           if (done_next_alpha) begin
             nstate = GEN_SEQUENCE;
@@ -270,6 +258,29 @@ module pucch (
   // endregion R: FSM
 
   // region angles (alpha, base seq, spreading (orthogonal))
+
+  // SPREADING
+  reg spread_start;
+  reg spread_next;
+
+  wire [3:0] spread_wi_phi;
+  wire spread_done;
+  wire spread_valid;
+
+  pucch1_spread spread_dut (
+      .clk(clk),
+      .rst(rst),
+
+      .i_start(spread_start),
+      .i_next (spread_next),
+      .i_nSF  (nSF),
+      .i_occi (occi),
+
+      .o_wi_phi(spread_wi_phi),
+      .o_done  (spread_done),
+      .o_valid (spread_valid)
+  );
+
 
   // ALPHA
   reg        alpha_start;
