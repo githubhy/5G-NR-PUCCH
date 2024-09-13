@@ -1,3 +1,4 @@
 vcds
 logs
 verilator_args.txt
+*.asv

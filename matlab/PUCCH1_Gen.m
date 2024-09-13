@@ -2,13 +2,13 @@
 % ack = [0;1];
 % sr = 1;
 
-% Specify a transmission with one-bit ACK and negative SR
-% ack = [1;1];
-% sr = 0;
+% Specify a transmission with two-bit ACK and negative SR
+ack = [1;0];
+sr = 0;
 
 % Specify a transmission with no ACK and positive SR
-ack = [];
-sr = 1;
+% ack = [];
+% sr = 1;
 
 % Specify a transmission with no ACK and negative SR => empty sequence
 % ack = [];
@@ -19,12 +19,12 @@ sr = 1;
 % sr = [];
 
 % Specify the first symbol index in the PUCCH transmission slot as 0, the number of allocated PUCCH symbols as 14, and the slot number as 3.
-OFDMSymbStartIndex = 0;
+OFDMSymbStartIndex = 4;
 OFDMSymbLength = 7;
 symAllocation = [OFDMSymbStartIndex OFDMSymbLength];
 
 nslot = 3;
-occi = 0;
+occi = 1;
 
 % Set the scrambling identity to 512 and the initial cyclic shift to 5.
 nid = 512;
@@ -85,7 +85,7 @@ sym = nrPUCCH1(ack,sr,symAllocation,cp,nslot, ...
 
 disp(sym);
 
-PUCCH_Sequence_UI(sym);
+% PUCCH_Sequence_UI(sym);
 
 
 function PUCCH_Sequence_UI(sym)

@@ -19,7 +19,7 @@ sr = 1;
 % sr = [];
 
 % Specify the first symbol index in the PUCCH transmission slot as 0, the number of allocated PUCCH symbols as 14, and the slot number as 3.
-OFDMSymbStartIndex = 2;
+OFDMSymbStartIndex = 1;
 OFDMSymbLength = 2;
 symAllocation = [OFDMSymbStartIndex OFDMSymbLength];
 

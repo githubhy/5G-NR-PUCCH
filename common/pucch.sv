@@ -42,7 +42,8 @@ module pucch (
   // Parameters
   localparam nIRB = 0;
   localparam mint = 5 * nIRB;
-  localparam Mrb = 1;  //! Interlacing is not supported! Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1
+  localparam Mrb = 1;  // Interlacing is not supported! Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1
+  localparam Msc = Mrb * 12;  // Total number of subcarriers
 
   localparam [3:0] nSlotSymb = 14;  //! (cyclic prefix (cp) == 'extended') ? 12 : 14
   localparam [3:0] nRBSC = 12;
@@ -160,7 +161,7 @@ module pucch (
               end
               1: begin
                 // Only get alpha at odd index
-                if (alpha_index[0] == 1) begin
+                if ((alpha_index >= symStart) && (alpha_index[0] == 1)) begin
                   get_alpha <= get_alpha + 1;
                 end
               end
@@ -183,6 +184,25 @@ module pucch (
     end
   end
 
+  reg done_next_alpha;
+  reg done_gen_sequence;
+  always_comb begin
+    case (i_pucch_format)
+      0: begin
+        done_next_alpha   = (alpha_index >= symStart);
+        done_gen_sequence = (get_alpha >= nPUCCHSym);
+      end
+      1: begin
+        done_next_alpha   = (alpha_index >= symStart) && (alpha_index[0] == 1);
+        done_gen_sequence = (get_alpha >= nSF);
+      end
+      default: begin
+        done_next_alpha   = 0;
+        done_gen_sequence = 0;
+      end
+    endcase
+  end
+
   always_comb begin
     // Default values
     nstate = cstate;
@@ -200,48 +220,53 @@ module pucch (
       NEXT_ALPHA: begin
         alpha_get = 1;
         if (alpha_valid) begin
-          case (i_pucch_format)
-            0: begin
-              // Start getting alpha from symStart
-              if (alpha_index >= symStart) begin
-                nstate = GEN_SEQUENCE;
-                alpha_get = 0;
-              end
-            end
-            1: begin
-              // Only get alpha at odd index
-              if (alpha_index[0] == 1) begin
-                nstate = GEN_SEQUENCE;
-                alpha_get = 0;
-              end
-            end
-            default: begin
+          // case (i_pucch_format)
+          //   0: begin
+          //     // Start getting alpha from symStart
+          //     if (done_next_alpha) begin
+          //       nstate = GEN_SEQUENCE;
+          //       alpha_get = 0;
+          //     end
+          //   end
+          //   1: begin
+          //     // Only get alpha at odd index
+          //     if (done_next_alpha) begin
+          //       nstate = GEN_SEQUENCE;
+          //       alpha_get = 0;
+          //     end
+          //   end
+          //   default: begin
 
-            end
-          endcase
+          //   end
+          // endcase
+          if (done_next_alpha) begin
+            nstate = GEN_SEQUENCE;
+            alpha_get = 0;
+          end
         end
       end
       GEN_SEQUENCE: begin
         if (seq_index >= nRBSC - 1) begin
-          case (i_pucch_format)
-            0: begin
-              if (get_alpha >= nPUCCHSym) begin
-                nstate = DONE;  // No need next alpha
-              end else begin
-                nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
-              end
-            end
-            1: begin
-              if (get_alpha >= nSF) begin
-                nstate = DONE;  // No need next alpha
-              end else begin
-                nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
-              end
-            end
-            default: begin
+          // case (i_pucch_format)
+          //   0: begin
+          //     if (done_gen_sequence) begin
+          //       nstate = DONE;  // No need next alpha
+          //     end else begin
+          //       nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
+          //     end
+          //   end
+          //   1: begin
+          //     if (done_gen_sequence) begin
+          //       nstate = DONE;  // No need next alpha
+          //     end else begin
+          //       nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
+          //     end
+          //   end
+          //   default: begin
 
-            end
-          endcase
+          //   end
+          // endcase
+          nstate = done_gen_sequence ? DONE : NEXT_ALPHA;
         end
       end
       DONE: begin
