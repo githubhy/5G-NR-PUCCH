@@ -14,7 +14,7 @@ module pucch (
     //! HARQ-ACK bits. The bit value of 1 stands for positive
     //! acknowledgment and bit value of 0 stands for negative
     //! acknowledgment.
-    input [1:0] i_ack,    // 00 01 10 11
+    input [1:0] i_ack,    //! [ack1, ack0] 00 01 10 11
     input [1:0] i_lenACK, //! (0-2)
 
     //! Scheduling request (SR). It is a column vector of
@@ -119,6 +119,30 @@ module pucch (
   end
   // endregion UCI
 
+  // region PSK modulation
+  localparam CYC_DIV = 24;
+
+  wire [4:0] d_bpsk;
+  bpsk_cyc #(
+      .CYC_DIV(CYC_DIV)
+  ) bpsk_cyc_24 (
+      .i_b(uciIn[0]),
+      .o_cyc_part(d_bpsk)
+  );
+
+  wire [4:0] d_qpsk;
+  qpsk_cyc #(
+      .CYC_DIV(CYC_DIV)
+  ) qpsk_cyc_24 (
+      .i_b({uciIn[0], uciIn[1]}),
+      .o_cyc_part(d_qpsk)
+  );
+
+  wire [4:0] cyc_24_modulation =  //
+  (lenUCI == 1) ? d_bpsk :  //
+  (lenUCI == 2) ? d_qpsk :  //
+  4'bx;
+  // endregion PSK modulation
 
   // region R: FSM
   localparam IDLE = 0;
@@ -220,25 +244,6 @@ module pucch (
       NEXT_ALPHA: begin
         alpha_get = 1;
         if (alpha_valid) begin
-          // case (i_pucch_format)
-          //   0: begin
-          //     // Start getting alpha from symStart
-          //     if (done_next_alpha) begin
-          //       nstate = GEN_SEQUENCE;
-          //       alpha_get = 0;
-          //     end
-          //   end
-          //   1: begin
-          //     // Only get alpha at odd index
-          //     if (done_next_alpha) begin
-          //       nstate = GEN_SEQUENCE;
-          //       alpha_get = 0;
-          //     end
-          //   end
-          //   default: begin
-
-          //   end
-          // endcase
           if (done_next_alpha) begin
             nstate = GEN_SEQUENCE;
             alpha_get = 0;
@@ -247,25 +252,6 @@ module pucch (
       end
       GEN_SEQUENCE: begin
         if (seq_index >= nRBSC - 1) begin
-          // case (i_pucch_format)
-          //   0: begin
-          //     if (done_gen_sequence) begin
-          //       nstate = DONE;  // No need next alpha
-          //     end else begin
-          //       nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
-          //     end
-          //   end
-          //   1: begin
-          //     if (done_gen_sequence) begin
-          //       nstate = DONE;  // No need next alpha
-          //     end else begin
-          //       nstate = NEXT_ALPHA;  // Get next alpha to generate the sequence
-          //     end
-          //   end
-          //   default: begin
-
-          //   end
-          // endcase
           nstate = done_gen_sequence ? DONE : NEXT_ALPHA;
         end
       end
@@ -282,31 +268,6 @@ module pucch (
   assign o_valid = (cstate == GEN_SEQUENCE);
 
   // endregion R: FSM
-
-  // region PSK modulation
-  localparam CYC_DIV = 24;
-
-  wire [4:0] d_bpsk;
-  bpsk_cyc #(
-      .CYC_DIV(CYC_DIV)
-  ) bpsk_cyc_24 (
-      .i_b(uciIn[0]),
-      .o_cyc_part(d_bpsk)
-  );
-
-  wire [4:0] d_qpsk;
-  qpsk_cyc #(
-      .CYC_DIV(CYC_DIV)
-  ) qpsk_cyc_24 (
-      .i_b(uciIn),
-      .o_cyc_part(d_qpsk)
-  );
-
-  wire [4:0] cyc_24_modulation =  //
- (lenUCI == 1) ? d_bpsk :  //
- (lenUCI == 2) ? d_qpsk :  //
- 4'bx;
-  // endregion PSK modulation
 
   // region angles (alpha, base seq, spreading (orthogonal))
 
@@ -436,7 +397,9 @@ module pucch (
           default: F0_csTable = 4'bx;
         endcase
       end else begin
-        case (ack)
+        case ({
+          ack[0], ack[1]
+        })
           0: F0_csTable = 1;
           1: F0_csTable = 4;
           2: F0_csTable = 10;

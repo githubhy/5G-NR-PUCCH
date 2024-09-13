@@ -7,7 +7,7 @@
 % sr = 0;
 
 % Specify a transmission with no ACK and positive SR
-ack = [1;1];
+ack = [0;1]; % ack = [ack0;ack1]
 sr = 1;
 
 % Specify a transmission with no ACK and negative SR => empty sequence
@@ -19,7 +19,7 @@ sr = 1;
 % sr = [];
 
 % Specify the first symbol index in the PUCCH transmission slot as 0, the number of allocated PUCCH symbols as 14, and the slot number as 3.
-OFDMSymbStartIndex = 1;
+OFDMSymbStartIndex = 4;
 OFDMSymbLength = 2;
 symAllocation = [OFDMSymbStartIndex OFDMSymbLength];
 

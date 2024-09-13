@@ -1,9 +1,11 @@
+% ACK = [BIT0; BIT1];
+
 % Specify a transmission with two-bit HARQ-ACK and positive SR.
 % ack = [0;1];
 % sr = 1;
 
 % Specify a transmission with two-bit ACK and negative SR
-ack = [1;0];
+ack = [1]; % ack = [ack0, ack1]
 sr = 0;
 
 % Specify a transmission with no ACK and positive SR
