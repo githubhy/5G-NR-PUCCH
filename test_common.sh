@@ -19,8 +19,11 @@
 # pucch1
 # compile_verilog common/pucch1.sv common/bpsk_cyc.sv common/qpsk_cyc.sv common/cyc_24.sv common/cyc_24_base_seq.sv common/varphi12.sv common/cyc_24_lowPAPRS_generator.sv common/c_seq_gen.sv common/x1_seq_gen.sv common/x2_seq_gen.sv common/mod_comb.sv tb/pucch1_tb.sv > logs/pucch1_tb.log; cat logs/pucch1_tb.log
 
-# PUCCH1Spreading
+# pucch1_spread
 # compile_verilog common/pucch1_spread.sv tb/pucch1_spread_tb.sv > logs/pucch1_spread_tb.log; cat logs/pucch1_spread_tb.log
+
+# cyc_24_pucch1_spread
+# compile_verilog common/cyc_24_pucch1_spread.sv tb/cyc_24_pucch1_spread_tb.sv > logs/cyc_24_pucch1_spread_tb.log; cat logs/cyc_24_pucch1_spread_tb.log
 
 #  cyc_12_alpha_generator
 # compile_verilog common/mod_comb.sv common/cyc_12_alpha_generator.sv common/c_seq_gen_control.sv common/x1_seq_gen.sv common/x2_seq_gen.sv common/c_seq_gen.sv tb/cyc_12_alpha_generator_tb.sv > logs/cyc_12_alpha_generator_tb.log; cat logs/cyc_12_alpha_generator_tb.log
@@ -31,7 +34,7 @@ compile_verilog\
  common/mod_comb.sv common/bpsk_cyc.sv common/qpsk_cyc.sv\
  common/cyc_12_alpha_generator.sv common/cyc_24_base_seq.sv common/cyc_24.sv\
  common/c_seq_gen_control.sv common/varphi12.sv common/c_seq_gen.sv\
- common/pucch1_spread.sv\
+ common/pucch1_spread.sv common/cyc_24_pucch1_spread.sv\
  common/x1_seq_gen.sv common/x2_seq_gen.sv > logs/pucch_tb.log; cat logs/pucch_tb.log;
 
 

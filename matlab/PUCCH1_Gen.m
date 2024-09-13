@@ -21,12 +21,12 @@ sr = 0;
 % sr = [];
 
 % Specify the first symbol index in the PUCCH transmission slot as 0, the number of allocated PUCCH symbols as 14, and the slot number as 3.
-OFDMSymbStartIndex = 4;
-OFDMSymbLength = 7;
+OFDMSymbStartIndex = 0;
+OFDMSymbLength = 12;
 symAllocation = [OFDMSymbStartIndex OFDMSymbLength];
 
 nslot = 3;
-occi = 1;
+occi = 5;
 
 % Set the scrambling identity to 512 and the initial cyclic shift to 5.
 nid = 512;

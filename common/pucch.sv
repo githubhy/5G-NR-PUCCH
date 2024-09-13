@@ -191,8 +191,9 @@ module pucch (
     end
   end
 
-  reg done_next_alpha;
-  reg done_gen_sequence;
+  reg  done_next_alpha;
+  reg  done_gen_sequence;
+  wire seq_tail = (seq_index == nRBSC - 1);
   always_comb begin
     case (i_pucch_format)
       0: begin
@@ -217,7 +218,7 @@ module pucch (
     alpha_get = 0;
 
     spread_start = 0;
-    spread_next = 0;
+    spread_next = seq_tail;
 
     case (cstate)
       IDLE: begin
@@ -263,11 +264,12 @@ module pucch (
   reg spread_start;
   reg spread_next;
 
-  wire [3:0] spread_wi_phi;
+  wire [4:0] spread_wi_phi_cyc_24;
   wire spread_done;
   wire spread_valid;
+  wire spread_is_supported;
 
-  pucch1_spread spread_dut (
+  cyc_24_pucch1_spread cyc_24_spread_dut (
       .clk(clk),
       .rst(rst),
 
@@ -276,9 +278,10 @@ module pucch (
       .i_nSF  (nSF),
       .i_occi (occi),
 
-      .o_wi_phi(spread_wi_phi),
-      .o_done  (spread_done),
-      .o_valid (spread_valid)
+      .o_wi_phi(spread_wi_phi_cyc_24),
+      .o_done(spread_done),
+      .o_valid(spread_valid),
+      .o_is_supported(spread_is_supported)
   );
 
 
@@ -328,8 +331,9 @@ module pucch (
         point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;
       end
       1: begin
-        // y = d * lowPAPRS
-        point_cyc_24_no_mod_24 = cyc_24_modulation + lowPAPRS_cyc_24;
+        // z = wi(m) * y(n) = w * d * lowPAPRS
+        if (spread_is_supported) point_cyc_24_no_mod_24 = spread_wi_phi_cyc_24 + cyc_24_modulation + lowPAPRS_cyc_24;
+        else point_cyc_24_no_mod_24 = 'dx;
       end
       default: begin
         point_cyc_24_no_mod_24 = 16'bx;

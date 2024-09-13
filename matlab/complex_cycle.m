@@ -1,7 +1,7 @@
 function plot_fixed_point_complex_cycle()
     % Number of points
-    N = 2;
-    offset = 45;
+    N = 3;
+    offset = 0;
 
     % Convert offset from degrees to radians
     offset_rad = deg2rad(offset);
