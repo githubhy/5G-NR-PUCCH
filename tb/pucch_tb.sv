@@ -89,36 +89,36 @@
 */
 
 /* PUCCH0
-  PUCCH0 alpha * n + r = (18 *  0 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (18 *  1 +  9) mod 24 =  3. (00.7071 + 00.7071i)        0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  2 +  9) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (18 *  3 +  3) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  4 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (18 *  5 +  9) mod 24 =  3. (00.7071 + 00.7071i)        0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  6 + 21) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  7 +  3) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  8 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 *  9 + 15) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (18 * 10 +  9) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (18 * 11 + 15) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (22 *  0 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (22 *  1 +  9) mod 24 =  7. (-0.2588 + 00.9659i)       -0.2588 + 0.9659i
-  PUCCH0 alpha * n + r = (22 *  2 +  9) mod 24 =  5. (00.2588 + 00.9659i)        0.2588 + 0.9659i
-  PUCCH0 alpha * n + r = (22 *  3 +  3) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (22 *  4 + 15) mod 24 =  7. (-0.2588 + 00.9659i)       -0.2588 + 0.9659i
-  PUCCH0 alpha * n + r = (22 *  5 +  9) mod 24 = 23. (00.9659 + -0.2588i)        0.9659 - 0.2588i
-  PUCCH0 alpha * n + r = (22 *  6 + 21) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
-  PUCCH0 alpha * n + r = (22 *  7 +  3) mod 24 = 13. (-0.9659 + -0.2588i)       -0.9659 - 0.2588i
-  PUCCH0 alpha * n + r = (22 *  8 +  9) mod 24 = 17. (-0.2588 + -0.9659i)       -0.2588 - 0.9659i
-  PUCCH0 alpha * n + r = (22 *  9 + 15) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
-  PUCCH0 alpha * n + r = (22 * 10 +  9) mod 24 = 13. (-0.9659 + -0.2588i)       -0.9659 - 0.2588i
-  PUCCH0 alpha * n + r = (22 * 11 + 15) mod 24 = 17. (-0.2588 + -0.9659i)       -0.2588 - 0.9659i
+  PUCCH0 alpha * n + r = ( 0 *  0 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  1 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  2 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  3 +  3) mod 24 =  3. (00.7071 + 00.7071i)        0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  4 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  5 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  6 + 21) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  7 +  3) mod 24 =  3. (00.7071 + 00.7071i)        0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  8 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 *  9 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 0 * 10 +  9) mod 24 =  9. (-0.7071 + 00.7071i)       -0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 0 * 11 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 4 *  0 + 15) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 4 *  1 +  9) mod 24 = 13. (-0.9659 + -0.2588i)       -0.9659 - 0.2588i
+  PUCCH0 alpha * n + r = ( 4 *  2 +  9) mod 24 = 17. (-0.2588 + -0.9659i)       -0.2588 - 0.9659i
+  PUCCH0 alpha * n + r = ( 4 *  3 +  3) mod 24 = 15. (-0.7071 + -0.7071i)       -0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 4 *  4 + 15) mod 24 =  7. (-0.2588 + 00.9659i)       -0.2588 + 0.9659i
+  PUCCH0 alpha * n + r = ( 4 *  5 +  9) mod 24 =  5. (00.2588 + 00.9659i)        0.2588 + 0.9659i
+  PUCCH0 alpha * n + r = ( 4 *  6 + 21) mod 24 = 21. (00.7071 + -0.7071i)        0.7071 - 0.7071i
+  PUCCH0 alpha * n + r = ( 4 *  7 +  3) mod 24 =  7. (-0.2588 + 00.9659i)       -0.2588 + 0.9659i
+  PUCCH0 alpha * n + r = ( 4 *  8 +  9) mod 24 = 17. (-0.2588 + -0.9659i)       -0.2588 - 0.9659i
+  PUCCH0 alpha * n + r = ( 4 *  9 + 15) mod 24 =  3. (00.7071 + 00.7071i)        0.7071 + 0.7071i
+  PUCCH0 alpha * n + r = ( 4 * 10 +  9) mod 24 =  1. (00.9659 + 00.2588i)        0.9659 + 0.2588i
+  PUCCH0 alpha * n + r = ( 4 * 11 + 15) mod 24 = 11. (-0.9659 + 00.2588i)       -0.9659 + 0.2588i
 
   PUCCH 0. [symStart nPUCCHSym] = [ 4  2]
-  ack = 2 (2 bit), sr = 1 (1 bit)
+  ack = 3 (2 bit), sr = 1 (1 bit)
   m0, nslot, nid = 5, 3, 512
   occi = 1
-  mcs = 4
+  mcs = 7
 */
 
 // PUCCH 0 get nPUCCHSym(1-2) of alpha(s), starting from symStart(0-10)
@@ -133,7 +133,7 @@ module pucch_tb;
   localparam test_symStart = 4;
   localparam test_nPUCCHSym = 2;  // nPUCCHSym = 7 => nSF = floor(nPUCCHSym/2) = 3
 
-  localparam test_ack = 2'b10; // ack = [bit1; bit0]
+  localparam test_ack = 2'b11; // ack = [bit1; bit0]
   localparam test_lenACK = 2;
   localparam test_sr = 1;
   localparam test_lenSR = 1;

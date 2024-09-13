@@ -388,24 +388,44 @@ module pucch (
     input sr;
     input lenSR;
     begin
-      if (lenACK == 0) begin
+      if (lenACK == 0) begin  // lenACK == 0
         F0_csTable = 0;
       end else if ((lenSR == 0) || (sr == 0)) begin
-        case (ack[0])
-          0: F0_csTable = 0;
-          1: F0_csTable = 3;
-          default: F0_csTable = 4'bx;
-        endcase
+        if (lenACK == 1) begin  // lenACK == 1
+          case (ack[0])
+            0: F0_csTable = 0;
+            1: F0_csTable = 6;
+            default: F0_csTable = 4'bx;
+          endcase
+        end else begin  // lenACK == 2
+          case ({
+            ack[0], ack[1]
+          })
+            0: F0_csTable = 0;
+            1: F0_csTable = 3;
+            2: F0_csTable = 9;
+            3: F0_csTable = 6;
+            default: F0_csTable = 4'bx;
+          endcase
+        end
       end else begin
-        case ({
-          ack[0], ack[1]
-        })
-          0: F0_csTable = 1;
-          1: F0_csTable = 4;
-          2: F0_csTable = 10;
-          3: F0_csTable = 7;
-          default: F0_csTable = 4'bx;
-        endcase
+        if (lenACK == 1) begin  // lenACK == 1
+          case (ack[0])
+            0: F0_csTable = 3;
+            1: F0_csTable = 9;
+            default: F0_csTable = 4'bx;
+          endcase
+        end else begin  // lenACK == 2
+          case ({
+            ack[0], ack[1]
+          })
+            0: F0_csTable = 1;
+            1: F0_csTable = 4;
+            2: F0_csTable = 10;
+            3: F0_csTable = 7;
+            default: F0_csTable = 4'bx;
+          endcase
+        end
       end
     end
   endfunction

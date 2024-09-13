@@ -7,7 +7,7 @@
 % sr = 0;
 
 % Specify a transmission with no ACK and positive SR
-ack = [0;1]; % ack = [ack0;ack1]
+ack = [1;1]; % ack = [ack0;ack1]
 sr = 1;
 
 % Specify a transmission with no ACK and negative SR => empty sequence
