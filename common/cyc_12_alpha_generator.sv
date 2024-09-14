@@ -73,10 +73,12 @@ module cyc_12_alpha_generator (
       .o_result  (u)
   );
 
+  localparam nGenBit = 8;
   wire [15:0] threshold = nSlotSymb * nslot;
-  wire [ 7:0] ncs;
-
-  c_seq_gen_control c_seq_gen_control_dut (
+  wire [nGenBit-1:0] ncs;
+  c_seq_gen_control #(
+      .nGenBit(nGenBit)
+  ) c_seq_gen_control_dut (
       .clk(clk),
       .rst(rst),
 
@@ -85,7 +87,7 @@ module cyc_12_alpha_generator (
       .i_init     ({21'b0, nid}),
       .i_threshold(threshold),
 
-      .o_gen_byte(ncs),
+      .o_gen_bit(ncs),
       .o_valid   (o_valid),
       .o_gen_done(o_can_get)
   );

@@ -17,12 +17,15 @@ module c_seq_gen_control_tb;
       $dumpfile(VCD_FILE);
       $dumpvars;
       reset(3);
-      test(test_init, test_threshold, test_get);
+      test({16'd56789, 5'd0, 10'd512}, 0, 100);
       nop_clk(10);
+
+      // test(test_init, test_threshold, test_get);
+      // nop_clk(10);
       //   test_get_in_between(test_init, test_threshold, test_start_get, test_get);
       //   nop_clk(10);
-      test_get_after_gen_done(test_init, test_threshold, test_start_get, test_get);
-      nop_clk(10);
+      // test_get_after_gen_done(test_init, test_threshold, test_start_get, test_get);
+      // nop_clk(10);
       $finish;
     end
   end
@@ -46,17 +49,20 @@ module c_seq_gen_control_tb;
 
 
   // Ports
+  localparam nGenBit = 2;
   reg clk = 0;
   reg rst = 0;
   reg i_start = 0;
   reg i_get = 0;
   reg [30:0] i_init;
   reg [15:0] i_threshold;
-  wire [7:0] o_gen_byte;
+  wire [nGenBit-1:0] o_gen_bit;
   wire o_valid;
   wire o_gen_done;
 
-  c_seq_gen_control c_seq_gen_control_dut (
+  c_seq_gen_control #(
+      .nGenBit(nGenBit)
+  ) c_seq_gen_control_dut (
       .clk(clk),
       .rst(rst),
 
@@ -65,13 +71,13 @@ module c_seq_gen_control_tb;
       .i_init     (i_init),
       .i_threshold(i_threshold),
 
-      .o_gen_byte(o_gen_byte),
+      .o_gen_bit(o_gen_bit),
       .o_valid   (o_valid),
       .o_gen_done(o_gen_done)
   );
 
   always @(posedge clk) begin
-    if (o_valid) $display("[%3d] o_gen_byte = %3d", c_seq_gen_control_dut.get_count, o_gen_byte);
+    if (o_valid) $display("[%3d] o_gen_bit = %3d (%b)", c_seq_gen_control_dut.get_count, o_gen_bit, o_gen_bit);
   end
 
   task automatic test;

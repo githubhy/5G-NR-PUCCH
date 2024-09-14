@@ -10,6 +10,7 @@ module c_seq_gen_tb;
   // (0): nid = 512, nslot = 3, 
   // (1): nid = 100, nslot = 2, 
   // (2): nid = 512, nslot = 0
+  // (3): nid = 512
   localparam testCase = 0;
 
 
@@ -95,6 +96,7 @@ module c_seq_gen_tb;
       $dumpvars;
       reset(3);
       test(CINIT, (nBitNeed / nGenBit));
+      // test({16'd56789, 5'b0, 10'd512}, 100);
       #(CLK_PERIOD * 10);
 
       $finish;
@@ -112,15 +114,16 @@ module c_seq_gen_tb;
     end
   endtask  //automatic
 
-  integer nbit;
-  integer getbit;
-  integer ncs_index;
-  integer seq_index;
-  reg [7:0] ncs;
-  reg pass;
   task automatic test;
     input [30:0] init;
     input integer clks;
+
+    integer nbit;
+    integer getbit;
+    integer ncs_index;
+    integer seq_index;
+    reg [7:0] ncs;
+    reg pass;
     begin
       nbit = 0;
       getbit = 0;

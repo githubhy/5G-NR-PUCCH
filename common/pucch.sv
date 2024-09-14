@@ -31,22 +31,41 @@ module pucch (
     input [7:0] i_nslot,  //! (0-159)
     input [9:0] i_nid,    //! (0-1023)
 
-    input [2:0] i_occi,  //! occi < nSF0 with nSF0 = floor(nPUCCHSym/2)
+    input [2:0] i_occi,  //! [Format 1] occi < nSF0 with nSF0 = floor(nPUCCHSym/2)
 
-    output reg signed [15:0] o_pucch_re,  // sfix16_En15
-    output reg signed [15:0] o_pucch_im,  // sfix16_En15
-    output reg o_valid,
-    output o_done
+    input [15:0] i_rnti,        //! [Format 2] Radio Network Temporary Identifier (0-65535)
+    input [ 1:0] i_uciCW,       //! [Format 2] Encoded UCI codeword as per TS 38.212 Section 6.3.1
+    input        i_uciCW_valid, //! [Format 2] uciCW is valid and ready to continue generate PUCCH sequence
+
+    //! The number of resource blocks associated with the PUCCH
+    //! format 3 transmission. Nominally the value of MRB will be
+    //! one of the set {1,2,3,4,5,6,8,9,10,12,15,16}.
+    input [4:0] i_Mrb,          //! [Format 3] 
+    input       i_pi2bpsk_qpsk, //! [Format 3] Modulation scheme (1: pi/2 BPSK, 0: QPSK)
+
+    output reg signed [15:0] o_pucch_re,  //! PUCCH sequence complex point's real value at current sequence index (sfix16_En15)
+    output reg signed [15:0] o_pucch_im,  //! PUCCH sequence complex point's imaginary value at current sequence index (sfix16_En15)
+    output reg               o_valid,     //! Output valid
+    output                   o_done       //! Done
 );
 
   // Parameters
-  localparam nIRB = 0;
-  localparam mint = 5 * nIRB;
-  localparam Mrb = 1;  // Interlacing is not supported! Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1
-  localparam Msc = Mrb * 12;  // Total number of subcarriers
-
   localparam [3:0] nSlotSymb = 14;  //! (cyclic prefix (cp) == 'extended') ? 12 : 14
   localparam [3:0] nRBSC = 12;
+
+  localparam nIRB = 0;
+  localparam mint = 5 * nIRB;
+
+  reg [4:0] Mrb;
+  always_comb begin
+    Mrb = 5'dx;
+    case (i_pucch_format)
+      0, 1: Mrb = 1;  // Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1
+      2, 3: Mrb = i_Mrb;
+      default: Mrb = 5'dx;
+    endcase
+  end
+  wire [7:0] Msc = Mrb * nRBSC;  // Total number of subcarriers
 
   // HIGHER MODULE SHOULD MAKE SURE i_symStart + i_nPUCCHSym <= nSlotSymb. THIS MODULE BYPASS THIS CHECKING PROCESS
   wire [3:0] symStart = i_symStart;
@@ -68,10 +87,15 @@ module pucch (
       default: mcs = 4'bx;
     endcase
   end
-  wire [7:0] nslot = i_nslot;
-  wire [9:0] nid = i_nid;
+  wire [ 7:0] nslot = i_nslot;
+  wire [ 9:0] nid = i_nid;
 
-  wire [2:0] occi = i_occi;
+  // [Format 1]
+  wire [ 2:0] occi = i_occi;
+
+  // [Format 2] nIRB, sf, occi are not supported for Format 2
+  wire [15:0] rnti = i_rnti;
+  wire [ 1:0] uciCW = i_uciCW;
 
   // region u, v
   // pucch-GroupHopping = 'neither' =>
@@ -122,35 +146,57 @@ module pucch (
   // region PSK modulation
   localparam CYC_DIV = 24;
 
-  wire [4:0] d_bpsk;
+  reg b_bpsk;  //! Input bit for BPSK modulation
+  reg [1:0] b_qpsk;  //! Input bit for QPSK modulation
+  always_comb begin
+    b_bpsk = 1'dx;
+    b_qpsk = 2'dx;
+    case (i_pucch_format)
+      1: begin
+        b_bpsk = uciIn[0];
+        b_qpsk = {uciIn[1], uciIn[0]};
+      end
+      2, 3: begin
+        b_qpsk = (uciCW ^ scramble_f2_bit);
+      end
+      default: begin
+        b_bpsk = 1'dx;
+        b_qpsk = 2'dx;
+      end
+    endcase
+  end
+
+  wire [4:0] d_bpsk;  //! Output angle coresponds to BPSK complex point
   bpsk_cyc #(
       .CYC_DIV(CYC_DIV)
   ) bpsk_cyc_24 (
-      .i_b(uciIn[0]),
+      .i_b       (b_bpsk),
       .o_cyc_part(d_bpsk)
   );
 
-  wire [4:0] d_qpsk;
+  wire [4:0] d_qpsk;  //! Output angle coresponds to QPSK complex point
   qpsk_cyc #(
       .CYC_DIV(CYC_DIV)
   ) qpsk_cyc_24 (
-      .i_b({uciIn[1], uciIn[0]}),
+      .i_b       (b_qpsk),
       .o_cyc_part(d_qpsk)
   );
 
-  wire [4:0] cyc_24_modulation =  //
+  wire [4:0] cyc_24_modulation =  //! Format 1's angle coresponds to BPSK or QPSK complex point of UCI data
   (lenUCI == 1) ? d_bpsk :  //
   (lenUCI == 2) ? d_qpsk :  //
   4'bx;
   // endregion PSK modulation
 
   // region R: FSM
-  localparam IDLE = 0;
-  localparam START_ALPHA = 1;
-  localparam NEXT_ALPHA = 2;
-  localparam GEN_SEQUENCE = 10;
+  localparam sIDLE = 0;  //! Waiting for start conditions to be met.
+  localparam sSTART_ALPHA = 1;  //! [Format 0, Format 1] Start generating alpha for Format 0, Format 1.
+  localparam sNEXT_ALPHA = 2;  //! [Format 0, Format 1] Get the next alpha for PUCCH Format 0, Format 1 sequence generation process
+  localparam sGEN_SEQUENCE = 3;  //! [Format 0, Format 1] Generate PUCCH Format 0, Format 1 sequence with current alpha
 
-  localparam DONE = 15;
+  localparam sGEN_F2 = 10;  //! [Format 2] Generate PUCCH Format 2 sequence with provied uciCW.
+
+  localparam sDONE = 15;
 
   reg [3:0] cstate, nstate;
 
@@ -158,41 +204,14 @@ module pucch (
   reg [15:0] get_alpha;  // get alpha 0,1,...,nSF-1
   reg [15:0] seq_index;  // n 0,1,2,...,nRBSC-1
 
-  always @(posedge clk, posedge rst) begin
-    if (rst) begin
-
-    end else begin
-      cstate <= nstate;
-      case (cstate)
-        IDLE: begin
-
-        end
-        START_ALPHA: begin
-          alpha_index <= 0;
-          get_alpha   <= 0;
-        end
-        NEXT_ALPHA: begin
-          if (alpha_valid) begin
-            alpha_index <= alpha_index + 1;
-            seq_index   <= 0;
-            if (done_next_alpha) get_alpha <= get_alpha + 1;
-          end
-        end
-        GEN_SEQUENCE: begin
-          seq_index <= seq_index + 1;
-        end
-        DONE: begin
-
-        end
-        default: begin
-          cstate <= IDLE;  // some error happended, back to IDLE
-        end
-      endcase
-    end
-  end
-
-  reg  done_next_alpha;
-  reg  done_gen_sequence;
+  //! [F0 F1 supported] high when conditions to get next alpha are met
+  //! (F0: get alpha at the next index, F1: get alpha at the next odd index)
+  reg done_next_alpha;
+  //! [F0 F1 supported] high when conditions to stop PUCCH sequence generation proceess are met
+  //! (generation enough sequence with alphas {F0: from index 0 to nPUCCHSym-1},
+  //! {F1: nSF = floor(nPUCCHSym/2) odd indexes from index 0 to nPUCCHSym-1})
+  reg done_gen_sequence;
+  //! High when sequence index at the end of the sequence (n == nRBSC-1)
   wire seq_tail = (seq_index == nRBSC - 1);
   always_comb begin
     case (i_pucch_format)
@@ -211,40 +230,93 @@ module pucch (
     endcase
   end
 
+  reg prev_uciCW_valid;
+
+  always @(posedge clk, posedge rst) begin
+    if (rst) begin
+
+    end else begin
+      cstate <= nstate;
+
+      case (cstate)
+        sIDLE: begin
+
+        end
+        sSTART_ALPHA: begin
+          alpha_index <= 0;
+          get_alpha   <= 0;
+        end
+        sNEXT_ALPHA: begin
+          if (alpha_valid) begin
+            alpha_index <= alpha_index + 1;
+            seq_index   <= 0;
+            if (done_next_alpha) get_alpha <= get_alpha + 1;
+          end
+        end
+        sGEN_SEQUENCE: begin
+          seq_index <= seq_index + 1;
+        end
+        sGEN_F2: begin
+          prev_uciCW_valid <= i_uciCW_valid;
+        end
+        sDONE: begin
+
+        end
+        default: begin
+          cstate <= sIDLE;  // some error happended, back to sIDLE
+        end
+      endcase
+    end
+  end
+
   always_comb begin
     // Default values
-    nstate = cstate;
-    alpha_start = 0;
-    alpha_get = 0;
+    nstate            = cstate;
+    alpha_start       = 0;
+    alpha_get         = 0;
 
-    spread_start = 0;
-    spread_next = seq_tail;
+    spread_start      = 0;
+    spread_next       = seq_tail;
+
+    // scramble_f2_start = 0;
+    scramble_f2_start = i_start;
+    scramble_f2_get   = 0;
 
     case (cstate)
-      IDLE: begin
-        if (i_start) nstate = (pucch_empty_seq ? DONE : START_ALPHA);
+      sIDLE: begin
+        if (i_start) begin
+          case (i_pucch_format)
+            0, 1: nstate = (pucch_empty_seq ? sDONE : sSTART_ALPHA);
+            2, 3: nstate = sGEN_F2;
+            default: nstate = cstate;
+          endcase
+        end
       end
-      START_ALPHA: begin
-        nstate = NEXT_ALPHA;
+      sSTART_ALPHA: begin
+        nstate = sNEXT_ALPHA;
         alpha_start = 1;
         spread_start = 1;
       end
-      NEXT_ALPHA: begin
+      sNEXT_ALPHA: begin
         alpha_get = 1;
 
         if (alpha_valid) begin
           if (done_next_alpha) begin
-            nstate = GEN_SEQUENCE;
+            nstate = sGEN_SEQUENCE;
             alpha_get = 0;
           end
         end
       end
-      GEN_SEQUENCE: begin
+      sGEN_SEQUENCE: begin
         if (seq_index >= nRBSC - 1) begin
-          nstate = done_gen_sequence ? DONE : NEXT_ALPHA;
+          nstate = done_gen_sequence ? sDONE : sNEXT_ALPHA;
         end
       end
-      DONE: begin
+      sGEN_F2: begin
+        // scramble_f2_start = i_start;
+        scramble_f2_get = i_uciCW_valid;
+      end
+      sDONE: begin
 
       end
       default: begin
@@ -253,12 +325,36 @@ module pucch (
     endcase
   end
 
-  assign o_done  = (cstate == DONE);
-  assign o_valid = (cstate == GEN_SEQUENCE);
+  assign o_done  = (cstate == sDONE);
+  assign o_valid = ((cstate == sGEN_SEQUENCE) || ((cstate == sGEN_F2) && prev_uciCW_valid));
 
   // endregion R: FSM
+  reg         scramble_f2_start;
+  reg         scramble_f2_get;
+  wire [30:0] scramble_f2_init = {rnti, 5'b0, nid};  //! Format 2 scrambling cinit = rnti * 2^15 + nid; (6.3.2.5.1 TS38.211)
 
-  // region angles (alpha, base seq, spreading (orthogonal))
+  wire [ 1:0] scramble_f2_bit;
+  wire        scramble_f2_can_get;
+  wire        scramble_f2_valid;
+  // region F2 scrambling sequence
+  c_seq_gen_control #(
+      .nGenBit(2)
+  ) scramble_f2 (
+      .clk        (clk),
+      .rst        (rst),
+      .i_start    (scramble_f2_start),
+      .i_get      (scramble_f2_get),
+      .i_init     (scramble_f2_init),
+      .i_threshold(0),
+
+      .o_gen_bit (scramble_f2_bit),
+      .o_gen_done(scramble_f2_can_get),
+      .o_valid   (scramble_f2_valid)
+  );
+
+  // endregion F2 scrambling sequence
+
+  // region angles (F0 F1 alpha, F0 F1 base seq, F1 spreading (orthogonal))
 
   // SPREADING
   reg spread_start;
@@ -268,7 +364,6 @@ module pucch (
   wire spread_done;
   wire spread_valid;
   wire spread_is_supported;
-
   cyc_24_pucch1_spread cyc_24_spread_dut (
       .clk(clk),
       .rst(rst),
@@ -326,15 +421,13 @@ module pucch (
   reg  [15:0] point_cyc_24_no_mod_24;
   always_comb begin
     case (i_pucch_format)
-      0: begin
-        // x = lowPAPRS
-        point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;
-      end
+      0: point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;  // x = lowPAPRS
       1: begin
         // z = wi(m) * y(n) = w * d * lowPAPRS
         if (spread_is_supported) point_cyc_24_no_mod_24 = spread_wi_phi_cyc_24 + cyc_24_modulation + lowPAPRS_cyc_24;
         else point_cyc_24_no_mod_24 = 'dx;
       end
+      2, 3: point_cyc_24_no_mod_24 = d_qpsk;
       default: begin
         point_cyc_24_no_mod_24 = 16'bx;
       end
@@ -367,7 +460,6 @@ module pucch (
 
   // endregion complex value
 
-
   //!  ```
   //!  % Get the possible cyclic shift values for the length of ack input
   //!  csTable = getCyclicShiftTable(lenACK);
@@ -397,6 +489,7 @@ module pucch (
   //!  
   //!  end
   //!  ```
+  //!
   function [3:0] F0_csTable;
     input [1:0] ack;
     input [1:0] lenACK;

@@ -1,4 +1,6 @@
-module c_seq_gen_control (
+module c_seq_gen_control #(
+    parameter nGenBit = 8
+) (
     input clk,
     input rst,
 
@@ -8,9 +10,9 @@ module c_seq_gen_control (
     input [30:0] i_init,      //! Initial value
     input [15:0] i_threshold, //! The threshold byte index that this module need to auto generate
 
-    output [7:0] o_gen_byte,  //! Output byte of the sequence
-    output       o_gen_done,
-    output       o_valid
+    output [nGenBit-1:0] o_gen_bit,   //! Output byte of the sequence
+    output               o_gen_done,
+    output               o_valid
 );
 
   reg [15:0] byte_count;
@@ -24,16 +26,16 @@ module c_seq_gen_control (
     end else begin
       if (i_start) begin
         byte_count <= 0;
-        get_count <= 0;
+        get_count  <= 0;
       end else begin
         if (gen_done) begin
-        //   if (i_get) byte_count <= byte_count + 1;  // manual gen
+          //   if (i_get) byte_count <= byte_count + 1;  // manual gen
         end else begin
           byte_count <= byte_count + 1;  // auto gen
         end
       end
 
-      if(o_valid) get_count <= get_count + 1;
+      if (o_valid) get_count <= get_count + 1;
     end
   end
 
@@ -42,7 +44,6 @@ module c_seq_gen_control (
   wire c_seq_gen_load = i_start;
   wire c_seq_gen_valid;
 
-  localparam nGenBit = 8;
   c_seq_gen #(
       .nGenBit(nGenBit)
   ) c_seq_gen_dut (
@@ -53,7 +54,7 @@ module c_seq_gen_control (
       .i_load(c_seq_gen_load),
       .i_init(i_init),
 
-      .o_seq_bit(o_gen_byte),
+      .o_seq_bit(o_gen_bit),
       .o_valid  (c_seq_gen_valid)
   );
 

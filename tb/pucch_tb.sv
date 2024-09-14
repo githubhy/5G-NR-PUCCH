@@ -161,12 +161,51 @@
   mcs = 7
 */
 
+/* PUCCH2
+  PUCCH2 nid = 512, rnti = 56789, cinit = 1860862464
+  PUCCH2. d = QPSK(b(x) ^ c(x)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071, -0.7071)     -0.707106781186548 - 0.707106781186548i
+  PUCCH2. d = QPSK(b(x) ^ c(x)) = QPSK(01 ^ 11) = 21/24 cyc (00.7071, -0.7071)      0.707106781186548 - 0.707106781186548i
+  PUCCH2. d = QPSK(b(x) ^ c(x)) = QPSK(11 ^ 10) =  9/24 cyc (-0.7071, 00.7071)     -0.707106781186548 + 0.707106781186548i
+  PUCCH2. d = QPSK(b(x) ^ c(x)) = QPSK(11 ^ 10) =  9/24 cyc (-0.7071, 00.7071)     -0.707106781186548 + 0.707106781186548i
+*/
+
+/*
+  PUCCH3 nid = 512, rnti = 56789, cinit = 1860862464
+  PUCCH3. d = QPSK(b( 0) ^ c( 0)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 1) ^ c( 1)) = QPSK(01 ^ 11) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 2) ^ c( 2)) = QPSK(11 ^ 10) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b( 3) ^ c( 3)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 4) ^ c( 4)) = QPSK(01 ^ 00) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b( 5) ^ c( 5)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 6) ^ c( 6)) = QPSK(10 ^ 00) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 7) ^ c( 7)) = QPSK(01 ^ 01) =  3/24 cyc (00.7071 + 00.7071i)        0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b( 8) ^ c( 8)) = QPSK(01 ^ 11) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b( 9) ^ c( 9)) = QPSK(10 ^ 00) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b(10) ^ c(10)) = QPSK(01 ^ 00) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(11) ^ c(11)) = QPSK(01 ^ 01) =  3/24 cyc (00.7071 + 00.7071i)        0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(12) ^ c(12)) = QPSK(00 ^ 10) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b(13) ^ c(13)) = QPSK(01 ^ 00) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(14) ^ c(14)) = QPSK(10 ^ 10) =  3/24 cyc (00.7071 + 00.7071i)        0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(15) ^ c(15)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b(16) ^ c(16)) = QPSK(10 ^ 11) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(17) ^ c(17)) = QPSK(01 ^ 10) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b(18) ^ c(18)) = QPSK(11 ^ 11) =  3/24 cyc (00.7071 + 00.7071i)        0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(19) ^ c(19)) = QPSK(10 ^ 11) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(20) ^ c(20)) = QPSK(11 ^ 10) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(21) ^ c(21)) = QPSK(10 ^ 01) = 15/24 cyc (-0.7071 + -0.7071i)       -0.707106781186548 - 0.707106781186548i
+  PUCCH3. d = QPSK(b(22) ^ c(22)) = QPSK(10 ^ 11) =  9/24 cyc (-0.7071 + 00.7071i)       -0.707106781186548 + 0.707106781186548i
+  PUCCH3. d = QPSK(b(23) ^ c(23)) = QPSK(10 ^ 00) = 21/24 cyc (00.7071 + -0.7071i)        0.707106781186548 - 0.707106781186548i
+*/
+
 // PUCCH 0 get nPUCCHSym(1-2) of alpha(s), starting from symStart(0-10)
 
 module pucch_tb;
 
   // Parameters
   localparam VCD_FILE = "vcds/pucch_tb.vcd";
+
+  localparam nSlotSymb = 14;  //! (cyclic prefix (cp) == 'extended') ? 12 : 14
+  localparam nRBSC = 12;
 
   localparam test_pucch_format = 1;
 
@@ -185,21 +224,35 @@ module pucch_tb;
 
   localparam test_occi = 5;
 
+  localparam test_rnti = 56789; // F2 F3
+
+  localparam test_Mrb = 2; // F3
+
   initial begin
     begin
       $dumpfile(VCD_FILE);
       $dumpvars;
       reset(3);
-      test(test_pucch_format,  //
-           test_symStart, test_nPUCCHSym,  //
-           test_ack, test_lenACK, test_sr, test_lenSR,  //
-           test_m0, test_nslot, test_nid,  //
-           test_occi);
+
+      // test_f2(test_nid, test_rnti, 4);
+      // nop_clk(10);
+      
+      test_f3(test_nid, test_rnti, test_Mrb, 1 * (test_Mrb * nRBSC)); //! The number of 2-bit value must be an integer multiple of (allocated number of subcarriers Msc = Mrb * nRBSC)
       nop_clk(10);
+
+      // test_f0f1(test_pucch_format,  //
+      //      test_symStart, test_nPUCCHSym,  //
+      //      test_ack, test_lenACK, test_sr, test_lenSR,  //
+      //      test_m0, test_nslot, test_nid,  //
+      //      test_occi);
+      // nop_clk(10);
+      
       $finish;
     end
   end
 
+  integer count_pucch2 = 0;
+  integer count_pucch3 = 0;
   always @(posedge clk) begin
     if (o_valid) begin
         case (i_pucch_format)
@@ -215,6 +268,22 @@ module pucch_tb;
                o_pucch_re / (2**15), o_pucch_im / (2**15));
                $display("wi_phi = %2d/24 cyc (is supported = %1b)", pucch_dut.spread_wi_phi_cyc_24, pucch_dut.spread_is_supported);
             end
+            2: begin
+              count_pucch2 <= count_pucch2 + 1;
+              $write("PUCCH2. d = QPSK(b(%2d) ^ c(%2d)) = QPSK(%2b ^ %2b)", //
+              count_pucch2, count_pucch2, pucch_dut.uciCW, pucch_dut.scramble_f2_bit);
+              $write(" = %2d/24 cyc (%07.4f + %07.4fi)", //
+              pucch_dut.d_qpsk, o_pucch_re / (2**15), o_pucch_im / (2**15));
+              $display();
+            end
+            3: begin
+              count_pucch3 <= count_pucch3 + 1;
+              $write("PUCCH3. d = QPSK(b(%2d) ^ c(%2d)) = QPSK(%2b ^ %2b)", //
+              count_pucch3, count_pucch3, pucch_dut.uciCW, pucch_dut.scramble_f2_bit);
+              $write(" = %2d/24 cyc (%07.4f + %07.4fi)", //
+              pucch_dut.d_qpsk, o_pucch_re / (2**15), o_pucch_im / (2**15));
+              $display();
+            end
             default: begin
                 
             end
@@ -226,7 +295,63 @@ module pucch_tb;
     end
   end
 
-  task automatic test;
+  task automatic test_f3;
+    input integer nid;
+    input integer rnti;
+    input integer Mrb;
+    input integer get;
+    integer     uciCW;
+    begin
+      @(negedge clk);
+      i_pucch_format = 3;
+      i_nid          = nid;
+      i_rnti         = rnti;
+      i_Mrb          = Mrb;
+
+      i_start        = 1;
+      @(negedge clk);
+      i_start = 0;
+
+      $display("PUCCH3 nid = %1d, rnti = %1d, cinit = %1d", nid, rnti, pucch_dut.scramble_f2_init);
+
+      i_uciCW_valid = 1;
+      repeat(get) begin
+        uciCW   = $urandom();
+        i_uciCW = uciCW;
+        @(negedge clk);
+      end
+      i_uciCW_valid = 0;
+    end
+  endtask //automatic
+
+  task automatic test_f2;
+    input integer nid;
+    input integer rnti;
+    input integer get;
+    integer     uciCW;
+    begin
+      @(negedge clk);
+      i_pucch_format = 2;
+      i_nid          = nid;
+      i_rnti         = rnti;
+
+      i_start        = 1;
+      @(negedge clk);
+      i_start = 0;
+
+      $display("PUCCH2 nid = %1d, rnti = %1d, cinit = %1d", nid, rnti, pucch_dut.scramble_f2_init);
+
+      i_uciCW_valid = 1;
+      repeat(get) begin
+        uciCW   = $urandom();
+        i_uciCW = uciCW;
+        @(negedge clk);
+      end
+      i_uciCW_valid = 0;
+    end
+  endtask //automatic
+
+  task automatic test_f0f1;
     input integer pucch_format;
     input integer symStart, nPUCCHSym;
     input integer ack, lenACK, sr, lenSR;
@@ -261,7 +386,7 @@ module pucch_tb;
     end
   endtask  //automatic
 
-  // Ports
+// Ports
   reg clk = 0;
   reg rst = 0;
   reg [2:0] i_pucch_format;
@@ -273,14 +398,22 @@ module pucch_tb;
   reg i_sr;
   reg i_lenSR;
   reg [3:0] i_m0;
-//   reg [3:0] i_mcs;
+  //   reg [3:0] i_mcs;
   reg [7:0] i_nslot;
   reg [9:0] i_nid;
   reg [2:0] i_occi;
+
+  reg [15:0] i_rnti;        //! [Format 2] Radio Network Temporary Identifier (0-65535)
+  reg [ 1:0] i_uciCW;       //! [Format 2] Encoded UCI codeword as per TS 38.212 Section 6.3.1
+  reg        i_uciCW_valid; //! [Format 2] uciCW is valid and ready to continue generate PUCCH sequence
+
+  reg [4:0] i_Mrb;
+
   wire real o_pucch_re;
   wire real o_pucch_im;
   wire o_valid;
   wire o_done;
+//
 
   pucch pucch_dut (
       .clk(clk),
@@ -304,6 +437,12 @@ module pucch_tb;
       .i_nid  (i_nid),
 
       .i_occi(i_occi),
+
+      .i_rnti       (i_rnti),
+      .i_uciCW      (i_uciCW),
+      .i_uciCW_valid(i_uciCW_valid),
+
+      .i_Mrb(i_Mrb),
 
       .o_pucch_re(o_pucch_re),
       .o_pucch_im(o_pucch_im),
