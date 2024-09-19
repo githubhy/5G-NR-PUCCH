@@ -96,6 +96,7 @@ module pucch (
   // [Format 2] nIRB, sf, occi are not supported for Format 2
   wire [15:0] rnti = i_rnti;
   wire [ 1:0] uciCW = i_uciCW;
+  wire [ 1:0] btilde = (uciCW ^ scramble_f2_bit);
 
   // region u, v
   // pucch-GroupHopping = 'neither' =>
@@ -146,22 +147,32 @@ module pucch (
   // region PSK modulation
   localparam CYC_DIV = 24;
 
-  reg b_bpsk;  //! Input bit for BPSK modulation
+  reg       b_bpsk;  //! Input bit for BPSK modulation
+  reg       b_pi2bpsk;  //! Input bit for Pi/2 BPSK modulation
+  reg       pi2bpsk_lsb;  //! Input index lsb for Pi/2 BPSK modulation
   reg [1:0] b_qpsk;  //! Input bit for QPSK modulation
-  always_comb begin
-    b_bpsk = 1'dx;
-    b_qpsk = 2'dx;
+  always_comb begin : sel_modulation_input
+    b_bpsk      = 1'dx;
+    b_pi2bpsk   = 1'dx;
+    pi2bpsk_lsb = 1'dx;
+    b_qpsk      = 2'dx;
     case (i_pucch_format)
       1: begin
         b_bpsk = uciIn[0];
         b_qpsk = {uciIn[1], uciIn[0]};
       end
-      2, 3: begin
-        b_qpsk = (uciCW ^ scramble_f2_bit);
+      2: begin
+        b_qpsk = btilde;
+      end
+      3, 4: begin
+        if (i_pi2bpsk_qpsk) b_pi2bpsk = 1;
+        else b_qpsk = btilde;
       end
       default: begin
-        b_bpsk = 1'dx;
-        b_qpsk = 2'dx;
+        b_bpsk      = 1'dx;
+        b_pi2bpsk   = 1'dx;
+        pi2bpsk_lsb = 1'dx;
+        b_qpsk      = 2'dx;
       end
     endcase
   end
@@ -182,19 +193,101 @@ module pucch (
       .o_cyc_part(d_qpsk)
   );
 
-  wire [4:0] cyc_24_modulation =  //! Format 1's angle coresponds to BPSK or QPSK complex point of UCI data
-  (lenUCI == 1) ? d_bpsk :  //
-  (lenUCI == 2) ? d_qpsk :  //
-  4'bx;
+  wire [4:0] d_pi2bpsk;
+  pi2bpsk_cyc #(
+      .CYC_DIV(CYC_DIV)
+  ) pi2bpsk_cyc_dut (
+      .i_b        (b_pi2bpsk),
+      .i_index_lsb(pi2bpsk_lsb),
+      .o_cyc_part (d_pi2bpsk)
+  );
+
+
+  reg [4:0] cyc_24_modulation;  //! Format 1's angle coresponds to BPSK or QPSK complex point of UCI data
+  always_comb begin : sel_modulation_output
+    case (i_pucch_format)
+      1: begin
+        case (lenUCI)
+          1: cyc_24_modulation = d_bpsk;
+          2: cyc_24_modulation = d_qpsk;
+          default: cyc_24_modulation = 5'dx;
+        endcase
+      end
+      2: begin
+        cyc_24_modulation = d_qpsk;
+      end
+      3, 4: begin
+        if (i_pi2bpsk_qpsk) begin
+          cyc_24_modulation = d_pi2bpsk;
+        end else begin
+          cyc_24_modulation = d_qpsk;
+        end
+      end
+      default: begin
+
+      end
+    endcase
+  end
   // endregion PSK modulation
+
+  // region Discrete Fourier Transform (Format 3)
+  reg signed  [   15:0] dft_i_re;
+  reg signed  [   15:0] dft_i_im;
+  reg                   dft_start;
+
+  wire        [    4:0] dft_k;
+  wire        [    4:0] dft_n;
+  wire signed [15+12:0] dft_o_re;
+  wire signed [15+12:0] dft_o_im;
+  wire                  dft_done_one;
+  wire                  dft_done_all;
+  wire                  dft_o_valid;
+
+  always_comb begin : sel_dft_input
+    case (i_pucch_format)
+      3: begin
+        dft_i_re = point_re;
+        dft_i_im = point_im;
+      end
+      default: begin
+        dft_i_re = 16'dx;
+        dft_i_im = 16'dx;
+      end
+    endcase
+  end
+
+
+  dft_12 dft_12_dut (
+      .clk(clk),
+      .rst(rst),
+
+      .i_re(dft_i_re),
+      .i_im(dft_i_im),
+      .i_start(dft_start),
+
+      .o_k (dft_k),
+      .o_n (dft_n),
+      .o_re(dft_o_re),
+      .o_im(dft_o_im),
+
+      .o_done_one(dft_done_one),
+      .o_done_all(dft_done_all),
+      .o_valid   (dft_o_valid)
+  );
+  // endregion Discrete Fourier Transform (Format 3)
 
   // region R: FSM
   localparam sIDLE = 0;  //! Waiting for start conditions to be met.
+
+  // F0 F1
   localparam sSTART_ALPHA = 1;  //! [Format 0, Format 1] Start generating alpha for Format 0, Format 1.
   localparam sNEXT_ALPHA = 2;  //! [Format 0, Format 1] Get the next alpha for PUCCH Format 0, Format 1 sequence generation process
   localparam sGEN_SEQUENCE = 3;  //! [Format 0, Format 1] Generate PUCCH Format 0, Format 1 sequence with current alpha
 
+  // F2 F3
   localparam sGEN_F2 = 10;  //! [Format 2] Generate PUCCH Format 2 sequence with provied uciCW.
+  localparam sGEN_F3 = 11;  //! [Format 3] Generate PUCCH Format 3 sequence with provied uciCW.
+  localparam sDFT = 12;  //! [Format 3] DFT the sequence
 
   localparam sDONE = 15;
 
@@ -232,15 +325,26 @@ module pucch (
 
   reg prev_uciCW_valid;
 
-  always @(posedge clk, posedge rst) begin
-    if (rst) begin
+  reg [4:0] dft_cyc_24_modulations[0:11];
 
+  genvar debug_dft_cyc_24_modulations_index;
+  for (debug_dft_cyc_24_modulations_index = 0; debug_dft_cyc_24_modulations_index < 12; debug_dft_cyc_24_modulations_index = debug_dft_cyc_24_modulations_index + 1) begin : debug_dft_cyc_24_modulations
+    wire [4:0] debug_dft_cyc_24_modulation = dft_cyc_24_modulations[debug_dft_cyc_24_modulations_index];
+  end
+
+  reg [4:0] modulation_count;
+  reg [3:0] dft_cyc_24_modulations_index;
+  always @(posedge clk, posedge rst) begin : fsm_seq
+    if (rst) begin
+      alpha_index <= 0;
+      get_alpha   <= 0;
+      seq_index   <= 0;
     end else begin
       cstate <= nstate;
 
       case (cstate)
         sIDLE: begin
-
+          if (i_start) modulation_count <= 0;
         end
         sSTART_ALPHA: begin
           alpha_index <= 0;
@@ -258,6 +362,16 @@ module pucch (
         end
         sGEN_F2: begin
           prev_uciCW_valid <= i_uciCW_valid;
+          if (i_pucch_format == 3) begin
+            modulation_count <= modulation_count + 1;
+            for (dft_cyc_24_modulations_index = 0; dft_cyc_24_modulations_index < 11; dft_cyc_24_modulations_index = dft_cyc_24_modulations_index + 1) begin
+              dft_cyc_24_modulations[dft_cyc_24_modulations_index] <= dft_cyc_24_modulations[dft_cyc_24_modulations_index+1];
+            end
+            dft_cyc_24_modulations[11] <= cyc_24_modulation;
+          end
+        end
+        sDFT: begin
+
         end
         sDONE: begin
 
@@ -269,7 +383,7 @@ module pucch (
     end
   end
 
-  always_comb begin
+  always_comb begin : fsm_comb
     // Default values
     nstate            = cstate;
     alpha_start       = 0;
@@ -315,6 +429,15 @@ module pucch (
       sGEN_F2: begin
         // scramble_f2_start = i_start;
         scramble_f2_get = i_uciCW_valid;
+        if (!i_uciCW_valid) begin
+          if (i_pucch_format == 2) nstate = sDONE;
+          else if (i_pucch_format == 3) nstate = sDONE;
+          else nstate = sDONE;
+        end
+        nstate = (modulation_count >= 12) ? sDFT : sGEN_F2;
+      end
+      sDFT: begin
+        if (i_pucch_format == 3) nstate = sDONE;
       end
       sDONE: begin
 
@@ -419,7 +542,7 @@ module pucch (
   wire [15:0] lowPAPRS_cyc_24 = (alpha_cyc_24 * base_seq_n) + base_seq_cyc_24;
 
   reg  [15:0] point_cyc_24_no_mod_24;
-  always_comb begin
+  always_comb begin : sel_cyc_24_input
     case (i_pucch_format)
       0: point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;  // x = lowPAPRS
       1: begin
@@ -427,7 +550,8 @@ module pucch (
         if (spread_is_supported) point_cyc_24_no_mod_24 = spread_wi_phi_cyc_24 + cyc_24_modulation + lowPAPRS_cyc_24;
         else point_cyc_24_no_mod_24 = 'dx;
       end
-      2, 3: point_cyc_24_no_mod_24 = d_qpsk;
+      2: point_cyc_24_no_mod_24 = cyc_24_modulation;
+      3: point_cyc_24_no_mod_24 = cyc_24_modulation;  // + ((12 * 24) - (dft_k * dft_n * 2));
       default: begin
         point_cyc_24_no_mod_24 = 16'bx;
       end

@@ -1,6 +1,6 @@
 % Define the complex number
-a = 3;  % Real part
-b = 4;  % Imaginary part
+a = 5;  % Real part
+b = 3;  % Imaginary part
 z = a + b*1i;  % Complex number a + bi
 
 % Multiply by -i

@@ -37,7 +37,8 @@ module x1_seq_gen #(
 
   always @(posedge clk, posedge rst) begin
     if (rst) begin
-      lfsr <= 0;
+      lfsr      <= 0;
+      o_seq_bit <= 0;
     end else begin
       if (i_load) begin
         lfsr <= INIT;

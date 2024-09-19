@@ -34,10 +34,11 @@ compile_verilog\
  common/mod_comb.sv common/bpsk_cyc.sv common/qpsk_cyc.sv\
  common/cyc_12_alpha_generator.sv common/cyc_24_base_seq.sv common/cyc_24.sv\
  common/c_seq_gen_control.sv common/varphi12.sv common/c_seq_gen.sv\
- common/pucch1_spread.sv common/cyc_24_pucch1_spread.sv\
+ common/pucch1_spread.sv common/cyc_24_pucch1_spread.sv common/dft_12.sv common/pi2bpsk_cyc.sv\
  common/x1_seq_gen.sv common/x2_seq_gen.sv > logs/pucch_tb.log; cat logs/pucch_tb.log;
 
-
+# dft_12
+# compile_verilog common/dft_12.sv tb/dft_12_tb.sv common/mod_comb.sv common/cyc_24.sv > logs/dft_12_tb.sv; cat logs/dft_12_tb.sv
 
 
 

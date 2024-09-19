@@ -93,7 +93,7 @@ module cyc_24_pucch1_spread (
     endcase
   end
 
-  always @(posedge clk) begin
+  always @(posedge clk, posedge rst) begin
     if (rst) begin
       //   m       <= 0;
       //   o_valid <= 0;

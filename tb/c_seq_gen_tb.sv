@@ -1,9 +1,11 @@
 `timescale 1ns / 1ps
 
+`define PULSE #(PULSE_TIME);
+`define PRE_PULSE #(CLK_PERIOD/2-PULSE_TIME/2);
+
 module c_seq_gen_tb;
 
   // Parameters
-  localparam CLK_PERIOD = 5;
 
   localparam nGenBit = 8;
 
@@ -103,17 +105,6 @@ module c_seq_gen_tb;
     end
   end
 
-  task automatic reset;
-    input integer clks;
-    begin
-      rst = 1;
-      repeat (clks) begin
-        @(posedge clk);
-      end
-      rst = 0;
-    end
-  endtask  //automatic
-
   task automatic test;
     input [30:0] init;
     input integer clks;
@@ -131,11 +122,11 @@ module c_seq_gen_tb;
       seq_index = 0;
       pass = 1;
       $display("init = %31b (%1d) in %1d clk cycles", init, init, clks);
-      @(negedge clk);
+      // @(posedge clk);
       i_init = init;
       i_load = 1;
       i_en   = 1;
-      @(negedge clk);
+      @(posedge clk);
       i_load = 0;
       repeat (clks + 1) begin
         // if (o_valid) begin  // begin if
@@ -185,13 +176,27 @@ module c_seq_gen_tb;
           $display("[%3d] %1b (%1d) GEN", nbit, o_seq_bit, o_seq_bit);
         end
         nbit = nbit + nGenBit;
-        @(negedge clk);
+        @(posedge clk);
       end
       i_en = 0;
       $display("[%s] Tested c(n) sequence generator with cinit = %1d, n = %1d. Ref: Matlab nrPRBS Generate PRBS sequence test file.", pass ? "PASSED" : "FAILED", init, clks);
     end
   endtask  //automatic
 
+
+  task automatic reset;
+    input integer clks;
+    begin
+      rst = 1;
+      repeat (clks) begin
+        @(posedge clk);
+      end
+      rst = 0;
+    end
+  endtask  //automatic
+
+  localparam CLK_PERIOD = 10;
+  localparam PULSE_TIME = 2;
   always #(CLK_PERIOD / 2) clk = !clk;
 
 endmodule

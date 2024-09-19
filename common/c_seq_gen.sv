@@ -16,11 +16,11 @@ module c_seq_gen #(
     output reg o_valid     //! Valid output
 );
 
-  always @(posedge clk, rst) begin
+  always @(posedge clk, posedge rst) begin
     if (rst) begin
       o_valid <= 0;
     end else begin
-      o_valid <= i_en;
+      o_valid <= (i_en || i_load);
     end
   end
 

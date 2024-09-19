@@ -56,7 +56,7 @@ Mrb   = 1; % Msc = Mrb * nRBSC with nRBSC = 12
 modulation = 'QPSK';
 % modulation = 'pi/2-BPSK';
 
-sf = 2;
+sf = 4;
 occi = 1;
 
 sym = nrPUCCH4(uciCW,modulation,nid,rnti,sf,occi);

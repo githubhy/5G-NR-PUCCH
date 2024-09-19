@@ -22,7 +22,7 @@ module c_seq_gen_control #(
 
   always @(posedge clk, posedge rst) begin
     if (rst) begin
-
+      byte_count <= 0;
     end else begin
       if (i_start) begin
         byte_count <= 0;

@@ -1,12 +1,10 @@
 module pi2bpsk_cyc #(
     parameter CYC_DIV = 24
 ) (
-    input i_b,
-    input [15:0] i_index,
+    input        i_b,
+    input        i_index_lsb,
     output [4:0] o_cyc_part
 );
-
-  wire is_index_even = i_index[0];
 
   localparam P0 = (CYC_DIV * 1 / 4) - (CYC_DIV * 1 / 8);
   localparam P1 = (CYC_DIV * 2 / 4) - (CYC_DIV * 1 / 8);
@@ -17,7 +15,7 @@ module pi2bpsk_cyc #(
 
   always_comb begin
     case ({
-      i_b, is_index_even
+      i_b, i_index_lsb
     })
       2'b00:   cyc_part = P0;
       2'b01:   cyc_part = P1;

@@ -43,7 +43,7 @@ module cyc_12_alpha_generator (
     output       o_valid
 );
 
-  localparam [3:0] nRBSC = 12;
+  //   localparam [3:0] nRBSC = 12;
 
   wire [3:0] m0 = i_m0;
   wire [3:0] mcs = i_mcs;
@@ -59,19 +59,19 @@ module cyc_12_alpha_generator (
   // ncs = c seq                            --- Hopping/cell identity specific cyclic shifts
 
   localparam [3:0] nSlotSymb = 14;  //! (cyclic prefix (cp) == 'extended') ? 12 : 14
-  localparam v = 0;
-  wire [15:0] u;  // u = nid mod 30
+  //   localparam v = 0;
+  //   wire [15:0] u;  // u = nid mod 30
 
-  localparam DIVIDER_30 = 30;
-  localparam ONE_DIV_DIVIDER_30 = 34'h111111111;
+  //   localparam DIVIDER_30 = 30;
+  //   localparam ONE_DIV_DIVIDER_30 = 34'h111111111;
 
-  mod_comb #(
-      .DIVIDER        (DIVIDER_30),
-      .ONE_DIV_DIVIDER(ONE_DIV_DIVIDER_30)
-  ) mod_comb_30 (
-      .i_dividend({6'd0, nid}),
-      .o_result  (u)
-  );
+  //   mod_comb #(
+  //       .DIVIDER        (DIVIDER_30),
+  //       .ONE_DIV_DIVIDER(ONE_DIV_DIVIDER_30)
+  //   ) mod_comb_30 (
+  //       .i_dividend({6'd0, nid}),
+  //       .o_result  (u)
+  //   );
 
   localparam nGenBit = 8;
   wire [15:0] threshold = nSlotSymb * nslot;
