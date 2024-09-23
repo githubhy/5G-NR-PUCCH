@@ -2,6 +2,8 @@ module cyc_12_alpha_generator (
     input clk,
     input rst,
 
+    input [2:0] i_pucch_format,  // Format 0-4
+
     input i_start,  //! start a new generation process, must wait for 14 * nslot before start getting alpha
     input i_get,    //! get the next alpha angle coresponds to a point on 12 points complex cycle.
 
@@ -35,9 +37,12 @@ module cyc_12_alpha_generator (
     //! higher-layer parameter hoppingId is provided, else, it
     //! is in range 0 to 1007, equal to the physical layer cell
     //! identity NCellID.
-    input  [9:0] i_nid,           // (0-1023)
+    input [9:0] i_nid,  // (0-1023)
+
+    input [15:0] i_rnti,  //! [Format 2] Radio Network Temporary Identifier (0-65535)
     // endregion Compute angles
-    // 
+    output [7:0] o_gen_byte,
+
     output       o_can_get,       //! High if alpha is ready to start getting
     output [4:0] o_cyc_12_alpha,
     output       o_valid
@@ -48,8 +53,9 @@ module cyc_12_alpha_generator (
   wire [3:0] m0 = i_m0;
   wire [3:0] mcs = i_mcs;
   localparam mint = 0;
-  wire [9:0] nid = i_nid;
-  wire [7:0] nslot = i_nslot;
+  wire [ 9:0] nid = i_nid;
+  wire [15:0] rnti = i_rnti;
+  wire [ 7:0] nslot = i_nslot;
 
   // pucch-GroupHopping = 'neither' =>
   // fgh = 0                                --- Sequence-group hopping patterns
@@ -75,7 +81,16 @@ module cyc_12_alpha_generator (
 
   localparam nGenBit = 8;
   wire [15:0] threshold = nSlotSymb * nslot;
-  wire [nGenBit-1:0] ncs;
+  wire [ 7:0] ncs = o_gen_byte;
+
+  reg  [30:0] cinit;
+  always_comb begin
+    case (i_pucch_format)
+      0, 1:    cinit = {21'b0, nid};
+      2, 3, 4: cinit = {rnti, 5'd0, nid};
+      default: cinit = 31'dx;
+    endcase
+  end
   c_seq_gen_control #(
       .nGenBit(nGenBit)
   ) c_seq_gen_control_dut (
@@ -84,10 +99,10 @@ module cyc_12_alpha_generator (
 
       .i_start    (i_start),
       .i_get      (i_get),
-      .i_init     ({21'b0, nid}),
+      .i_init     (cinit),
       .i_threshold(threshold),
 
-      .o_gen_bit(ncs),
+      .o_gen_bit (o_gen_byte),
       .o_valid   (o_valid),
       .o_gen_done(o_can_get)
   );

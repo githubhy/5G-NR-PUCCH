@@ -23,7 +23,8 @@ symStart = 4;
 nPUCCHSym = 2;
 symAllocation = [symStart nPUCCHSym];
 
-nslot = 3;
+% nslot = 3;
+nslot = 0;
 % occi = 0;
 
 % Set the scrambling identity to 512 and the initial cyclic shift to 5.

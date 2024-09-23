@@ -8,6 +8,7 @@
 //  12  h2AAAAAAAA
 //  24  h155555555
 //  30  h111111111
+//  192 h02aaaaaab
 
 
 module mod_comb #(

@@ -5,7 +5,7 @@
 % sr = 1;
 
 % Specify a transmission with two-bit ACK and negative SR
-ack = [1]; % ack = [ack0, ack1]
+ack = [1;0]; % ack = [ack0, ack1]
 sr = 0;
 
 % Specify a transmission with no ACK and positive SR
@@ -28,7 +28,7 @@ nPUCCHSym = 7;
 symAllocation = [symStart nPUCCHSym];
 
 nslot = 3;
-occi = 1;
+occi = 2;
 
 % Set the scrambling identity to 512 and the initial cyclic shift to 5.
 nid = 512;

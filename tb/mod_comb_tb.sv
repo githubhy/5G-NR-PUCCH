@@ -3,26 +3,25 @@
 
 module mod_comb_tb;
 
-  localparam mod = 24;
+  localparam mod = 192;
 
   // Parameters
   localparam CLK_PERIOD = 10;
   localparam I_TEST_FILE = "tb/mod_comb/input.txt";
-  localparam O_TEST_FILE =  //
-  (mod == 12) ? "tb/mod_comb/mod_12_output.txt" :  //
-  (mod == 30) ? "tb/mod_comb/mod_30_output.txt" :  //
-  (mod == 24) ? "tb/mod_comb/mod_24_output.txt" :  //
-  "";
+  localparam O_TEST_FILE = "tb/mod_comb/mod_192_output.txt";  //
+  // (mod == 12) ? "tb/mod_comb/mod_12_output.txt" :  //
+  // (mod == 30) ? "tb/mod_comb/mod_30_output.txt" :  //
+  // (mod == 24) ? "tb/mod_comb/mod_24_output.txt" :  //
+  // (mod == 192) ? "tb/mod_comb/mod_192_output.txt" :  //
+  // "";
 
-  localparam DIVIDER =  //
-  (mod == 12) ? 12 :  //
-  (mod == 30) ? 30 :  //
-  (mod == 24) ? 24 : 0;
+  localparam DIVIDER = mod;
 
   localparam ONE_DIV_DIVIDER =  //
   (mod == 12) ? 34'h2AAAAAAAA :  //
   (mod == 30) ? 34'h111111111 :  //
   (mod == 24) ? 34'h155555555 :  //
+  (mod == 192) ? 34'h02aaaaaab :  //
   0;
 
   // Ports
@@ -60,7 +59,7 @@ module mod_comb_tb;
           $display("[  OK  ] %d mod %1d = %d", i_dividend, DIVIDER, o_result);
         end else begin
           ok = 0;
-          $display("[FAILED] %d mod %1d = %d", i_dividend, DIVIDER, o_result);
+          $display("[FAILED] %d mod %1d = %d. Expected %1d", i_dividend, DIVIDER, o_result, o_test[i]);
         end
       end
       $display("%s", ok ? "PASSED" : "FAILED");

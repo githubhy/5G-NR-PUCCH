@@ -1,6 +1,6 @@
 function plot_fixed_point_complex_cycle()
     % Number of points
-    N = 12;
+    N = 12*16;
     offset = 0;
 
     % Convert offset from degrees to radians
@@ -22,12 +22,25 @@ function plot_fixed_point_complex_cycle()
 
     % Print the fixed-point binary values and original complex values
     disp('The equally spaced points on the complex unit circle in 16-bit fixed-point are:');
+    % Open two files for writing
+    fid_real = fopen('real_points.txt', 'w');
+    fid_imag = fopen('imag_points.txt', 'w');
+    
     for i = 1:N
+        % Convert real and imaginary fixed points to binary format
         real_binary = bin(fixed_points_real(i));
         imag_binary = bin(fixed_points_imag(i));
-        fprintf('Point %2d: Real = %s (%.4f), Imaginary = %s (%.4f)\n', ...
-            i, real_binary, real(points(i)), imag_binary, imag(points(i)));
+        
+        % Write to real part file
+        fprintf(fid_real, "assign point_re[%03d] = 'b%s; // (%.4f)\n", i-1, real_binary, real(points(i)));
+        
+        % Write to imaginary part file
+        fprintf(fid_imag, "assign point_im[%03d] = 'b%s; // (%.4f)\n", i-1, imag_binary, imag(points(i)));
     end
+    
+    % Close files
+    fclose(fid_real);
+    fclose(fid_imag);
 
     % Plot the points on the complex plane and draw lines from the center
     figure;

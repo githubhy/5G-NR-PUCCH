@@ -1,5 +1,6 @@
 
-uciCW = [1;0;1;0;1;1;1;1];
+% uciCW = [1;0;1;0;1;1;1;1];
+uciCW = [1;1;0;0;1;0;0;1; 0;0;0;1;1;0;1;1];
 nid = 512;  % 10 bit
 rnti = 56789; % 16 bit
 sym = nrPUCCH2(uciCW,nid,rnti);

@@ -16,17 +16,18 @@ module c_seq_gen_control #(
 );
 
   reg [15:0] byte_count;
-  reg [15:0] get_count;
+  // reg [15:0] get_count;
   wire gen_done = (byte_count > i_threshold);
-  assign o_gen_done = gen_done;
+  assign o_gen_done = (i_threshold == 0) ? 1 : (byte_count >= i_threshold);
 
   always @(posedge clk, posedge rst) begin
     if (rst) begin
       byte_count <= 0;
+      // get_count  <= 0;
     end else begin
       if (i_start) begin
         byte_count <= 0;
-        get_count  <= 0;
+        // get_count  <= 0;
       end else begin
         if (gen_done) begin
           //   if (i_get) byte_count <= byte_count + 1;  // manual gen
@@ -35,7 +36,7 @@ module c_seq_gen_control #(
         end
       end
 
-      if (o_valid) get_count <= get_count + 1;
+      // if (o_valid) get_count <= get_count + 1;
     end
   end
 
@@ -58,7 +59,7 @@ module c_seq_gen_control #(
       .o_valid  (c_seq_gen_valid)
   );
 
-  assign o_valid = c_seq_gen_valid && gen_done;
+  assign o_valid = (c_seq_gen_valid && gen_done);
 
 
 endmodule

@@ -23,7 +23,7 @@ def mod_n_test(input_filename="input.txt", output_filename="output.txt", mod_n=1
 
 
 if __name__ == "__main__":
-    mod_n_value = 24  # You can change this value to any n for mod n
+    mod_n_value = 192  # You can change this value to any n for mod n
     input_file_name = f"input.txt"  # Input file name
     output_file_name = f"mod_{mod_n_value}_output.txt"  # Output file name
 

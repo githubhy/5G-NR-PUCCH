@@ -1,65 +1,90 @@
-uciCW = [
-    1;
-    0;
-    1;
-    0;
-    1;
-    1;
-    1;
-    0;
-    1;
-    0;
-    1;
-    0;
-    0;
-    1;
-    1;
-    0;
-    1;
-    0;
-    0;
-    1;
-    1;
-    0;
-    1;
-    0;
-    0;
-    0;
-    1;
-    0;
-    0;
-    1;
-    1;
-    0;
-    0;
-    1;
-    1;
-    0;
-    1;
-    1;
-    0;
-    1;
-    1;
-    1;
-    0;
-    1;
-    0;
-    1;
-    0;
-    1
-];
-
 nid   = 512;  % 10 bit
 rnti  = 56789; % 16 bit
-Mrb   = 1; % Msc = Mrb * nRBSC with nRBSC = 12
+Mrb   = 3; % Msc = Mrb * nRBSC with nRBSC = 12
+
+lenUCI = Mrb*12*2;
+uciCW = [
+     1;
+     1;
+     0;
+     1;
+     1;
+     0;
+     0;
+     1;
+     1;
+     1;
+     0;
+     1;
+     1;
+     0;
+     1;
+     0;
+     0;
+     1;
+     1;
+     1;
+     1;
+     0;
+     1;
+     1;
+     1;
+     1;
+     1;
+     0;
+     1;
+     0;
+     1;
+     0;
+     0;
+     0;
+     0;
+     1;
+     1;
+     0;
+     1;
+     0;
+     0;
+     0;
+     1;
+     1;
+     0;
+     0;
+     0;
+     1;
+     1;
+     1;
+     0;
+     1;
+     1;
+     0;
+     0;
+     0;
+     1;
+     0;
+     1;
+     0;
+     1;
+     0;
+     1;
+     1;
+     1;
+     1;
+     1;
+     0;
+     0;
+     0;
+     1;
+     0;
+];
 
 % Set interlacing specific parameters to empty as they are not
 % supported in this function.
 sf   = [];
 occi = [];
 
-modulation = 'QPSK';
-% modulation = 'pi/2-BPSK';
+% modulation = 'QPSK';
+modulation = 'pi/2-BPSK';
 
 sym = nrPUCCH3(uciCW,modulation,nid,rnti,Mrb);
 %nrPUCCH3 Physical uplink control channel format 3
