@@ -1,3 +1,5 @@
+% nrPUCCH
+
 uciCW = [
     1;
     1;
@@ -7,6 +9,7 @@ uciCW = [
     0;
     0;
     1;
+    
     0;
     0;
     0;
@@ -15,6 +18,33 @@ uciCW = [
     0;
     1;
     1;
+
+    1;
+    1;
+    0;
+    0;
+    % 1;
+    % 0;
+    % 0;
+    % 1;
+    % 
+    % 0;
+    % 0;
+    % 0;
+    % 1;
+    % 1;
+    % 0;
+    % 1;
+    % 1;
+    % 
+    % 1;
+    % 1;
+    % 0;
+    % 0;
+    % 1;
+    % 0;
+    % 0;
+    % 1;
 ];
 nid  = 512;   % 10 bit
 rnti = 56789; % 16 bit
@@ -25,10 +55,11 @@ rnti = 56789; % 16 bit
 % sf = {2,4} given by occi
 % wn(i) is given by Table and n = (n0 + nIRB) mod sf
 
-nIRB = [1]; % to compute n = (n0 + nIRB) mod sf with n0 = occi
-sf   = [2]; % sf given by 'occ-Length'
-occi = [2]; % occi given by 'occ-Index'
-
+sf   = [4]; % sf given by 'occ-Length'
+occi = [0 1 2 3 0]; % occi given by 'occ-Index'
+nIRB = [0 0 0 0 1]; % to compute n = (n0 + nIRB) mod sf with n0 = occi
+% occi = [2]; % occi given by 'occ-Index'
+% nIRB = [1]; % to compute n = (n0 + nIRB) mod sf with n0 = occi
 sym = hPUCCH2(uciCW,nid,rnti,nIRB,sf,occi);
 
 disp(sym);
@@ -62,16 +93,110 @@ function sym = hPUCCH2(uciCW,nid,rnti,nIRB,sf,occi,varargin)
         numRB = length(nIRB);
         nRE = 8; % Number of RE per PRB available for PUCCH
         formatPUCCH = 2;
-        nr5g.internal.pucch.validateSpreadingConfig(seqLength,modulation,numRB,nRE,sf,formatPUCCH);
+        validateSpreadingConfig(seqLength,modulation,numRB,nRE,sf,formatPUCCH);
 
         % NIRB-dependent spreading sequence for each PUCCH modulated symbol
         numOFDMSymbols = sf*seqLength/(numRB*nRE);
-        wn = nr5g.internal.interlacing.interlacedSpreadingSequences(nIRB,nRE,sf,occi,numOFDMSymbols);
+        wn = interlacedSpreadingSequences(nIRB,nRE,sf,occi,numOFDMSymbols);
 
         % Spread PUCCH modulated symbols. The mapping is frequency first.
         z = (d.*wn).';
         sym = z(:);
 
+    end
+
+end
+
+function wn = interlacedSpreadingSequences(nIRB,nRE,sf,occi,numOFDMSymbols)
+%interlacedSpreadingSequences Spreading sequences for interlaced PUCCH format 2
+%
+%   Note: This is an internal undocumented function and its API and/or
+%   functionality may change in subsequent releases.
+%
+%   interlacedSpreadingSequences(NIRB,NRE,SF,OCCI,NSYM) returns the
+%   NIRB-dependent spreading sequences for PUCCH format 2 with interlacing.
+%   The output is an N-by-SF matrix of spreading sequences. N is the number
+%   of REs available for PUCCH transmission in NIRB resource blocks (N =
+%   numel(NIRB)*(NRE/SF), with NRE = 8 the number of RE per PRB available
+%   for PUCCH format 2) and NSYM number of OFDM symbols.
+
+%   Copyright 2023 The MathWorks, Inc.
+
+%#codegen
+
+    % Calculate the spreading sequence for each interlaced RB (wn). The
+    % index n of wn depends on the OCCI and the index of the RB in the
+    % interlace. Each row corresponds to 1 IRB and each column to a
+    % subcarrier. The QPSK modulated symbols will be spread along SF
+    % subcarriers.
+    n0 = double(occi);
+    n = mod(n0 + nIRB,sf);
+    original_wn = nr5g.internal.pucch.spreadingSequence(sf,n);
+     % 1     1     1     1
+     % 1    -1     1    -1
+     % 1     1    -1    -1
+     % 1    -1    -1     1
+
+    % Repeat the IRB-dependent spreading sequences (rows of wn) such that
+    % all PUCCH modulation symbols in a PRB are spread with the same
+    % sequence.
+    repeated_wn = repelem(original_wn,nRE/sf(1),1);
+     % 1     1     1     1  |
+     % 1     1     1     1  | duplicated by nRE/sf
+     % 
+     % 1    -1     1    -1  |
+     % 1    -1     1    -1  | duplicated by nRE/sf
+     % 
+     % 1     1    -1    -1  |
+     % 1     1    -1    -1  | duplicated by nRE/sf
+     % 
+     % 1    -1    -1     1  |
+     % 1    -1    -1     1  | duplicated by nRE/sf
+
+    % Replicate spreading sequences to match the number of OFDM symbols
+    wn = repmat(repeated_wn,numOFDMSymbols(1),1);
+     % 1     1     1     1  | 
+     % 1     1     1     1  | 
+     % 1    -1     1    -1  | 
+     % 1    -1     1    -1  | 
+     % 1     1    -1    -1  | 
+     % 1     1    -1    -1  | 
+     % 1    -1    -1     1  | 
+     % 1    -1    -1     1  |
+     % ---------------------|   <-- duplicated by numOFDMSymbols
+     % 1     1     1     1  |
+     % 1     1     1     1  |
+     % 1    -1     1    -1  |
+     % 1    -1     1    -1  |
+     % 1     1    -1    -1  |
+     % 1     1    -1    -1  |
+     % 1    -1    -1     1  |
+     % 1    -1    -1     1  |
+end
+
+function validateSpreadingConfig(seqLength,modulation,Mrb,nRE,sf,formatPUCCH)
+%validateSpreadingConfig Validate spreading configuration for PUCCH 2, 3 and 4
+%
+%   Note: This is an internal undocumented function and its API and/or
+%   functionality may change in subsequent releases.
+
+%   Copyright 2023 The MathWorks, Inc.
+
+%#codegen
+
+    % Modulation order
+    Q = nr5g.internal.getQm(modulation);
+
+    SF = sf(1);
+    Msc = Mrb*nRE;
+    nSymbols = SF * seqLength/Msc;
+    switch formatPUCCH
+        case 2
+            coder.internal.errorIf(nSymbols ~= fix(nSymbols),'nr5g:nrPUCCH:InvalidNumOfModSymbolsF2',seqLength*Q,SF,Mrb);
+        case 3
+            coder.internal.errorIf(nSymbols ~= fix(nSymbols),'nr5g:nrPUCCH:InvalidNumOfModSymbolsF3',seqLength*Q,modulation,SF,Mrb);
+        case 4
+            coder.internal.errorIf(nSymbols ~= fix(nSymbols),'nr5g:nrPUCCH:InvalidNumOfModSymbolsF4',seqLength*Q,modulation,SF,Mrb);
     end
 
 end

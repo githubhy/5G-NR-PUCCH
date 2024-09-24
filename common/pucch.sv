@@ -2,7 +2,7 @@ module pucch (
     input clk,
     input rst,
 
-    input [2:0] i_pucch_format,  // Format 0-4
+    input [2:0] i_pucch_format,  //! Format 0-4
 
     input i_start,
 
@@ -42,46 +42,72 @@ module pucch (
     // input        i_n0,           //! n0 = occi is the index of the orthogonal sequence to use given by the higher-layer parameter occ-Index
     input [UNKNOWN-1:0] i_nIRB,         //! Interlaced Resource Block number as defined in clause 4.4.4.6 within the interlace given by the higher-layer parameter Interlace0.
 
+    input [UNKNOWN-1:0] i_nIRB_arr[0:15],
+    input [UNKNOWN-1:0] i_occi_arr[0:15],
+    input [        4:0] lenArr,
+
     //! The number of resource blocks associated with the PUCCH
     //! format 3 transmission. Nominally the value of MRB will be
     //! one of the set {1,2,3,4,5,6,8,9,10,12,15,16}.
     input [4:0] i_Mrb,          //! [Format 3] 
     input       i_pi2bpsk_qpsk, //! [Format 3] Modulation scheme (1: pi/2 BPSK, 0: QPSK)
 
-    output reg signed [15:0] o_pucch_re,  //! PUCCH sequence complex point's real value at current sequence index (sfix16_En15)
-    output reg signed [15:0] o_pucch_im,  //! PUCCH sequence complex point's imaginary value at current sequence index (sfix16_En15)
-    output reg               o_valid,     //! Output valid
-    output                   o_done       //! Done
+    output reg signed [15:0] o_pucch_re[0:3],  //! PUCCH sequence complex point's real value at current sequence index (sfix16_En15)
+    output reg signed [15:0] o_pucch_im[0:3],  //! PUCCH sequence complex point's imaginary value at current sequence index (sfix16_En15)
+    output reg               o_valid,          //! Output valid
+    output                   o_done            //! Done
 );
 
   localparam UNKNOWN = 16;  // Unknow number of bits, need to fix
 
   // Parameters
   localparam [3:0] nSlotSymb = 14;  //! (cyclic prefix (cp) == 'extended') ? 12 : 14
-  localparam [3:0] nRBSC = 12;
+  localparam [3:0] nRBSC = 12;  //! Number of subcarriers per Resource Block
+  localparam [3:0] nRE = 8;  //! Number of RE per PRB available for PUCCH
 
   reg [UNKNOWN-1:0] nIRB;  // = 0;
-  always_comb begin
+  always_comb begin : sel_nIRB
     case (i_pucch_format)
       0, 1:    nIRB = 0;  // = 0 for F0, F1
       2, 3, 4: nIRB = i_nIRB;
-      default: begin
-
-      end
+      default: nIRB = 0;
     endcase
   end
   wire mint = 5 * nIRB;
 
   reg [4:0] Mrb;
-  always_comb begin
-    Mrb = 5'dx;
+  always_comb begin : sel_Mrb
     case (i_pucch_format)
-      0, 1: Mrb = 1;  // Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1
-      2, 3: Mrb = i_Mrb;
+      0, 1:    Mrb = 1;  // Default single-PRB allocation for PUCCH format 0 and 1 is Mrb = 1 if no nIRB is provied (which is not used)
+      2, 3:    Mrb = i_Mrb;  // F2 F3 support 
+      4:       Mrb = 1;
       default: Mrb = 5'dx;
     endcase
   end
-  wire [7:0] Msc = Mrb * nRBSC;  // Total number of subcarriers
+
+  //! Select coresponds nIRB and occi in nIRB_arr and occi_arr
+  //! wn_index = 0,1,...,lenArr-1
+  reg [4:0] wn_index;
+
+  //! nRepeat = nRE/sf with nRE = 8
+  //! Repeat nRepeat times of a wn for the current modulation symbol d
+  reg [2:0] nRepeat;
+  always_comb begin : sel_nRepeat
+    case (sf)
+      2:       nRepeat = 4;
+      4:       nRepeat = 2;
+      default: nRepeat = 0;
+    endcase
+  end
+
+  reg [7:0] Msc;  //! Total number of subcarriers
+  always_comb begin : sel_Msc
+    case (i_pucch_format)
+      0, 1:    Msc = Mrb * nRBSC;
+      2, 3, 4: Msc = Mrb * nRE;
+      default: Msc = 5'dx;
+    endcase
+  end
 
   // HIGHER MODULE SHOULD MAKE SURE i_symStart + i_nPUCCHSym <= nSlotSymb. THIS MODULE BYPASS THIS CHECKING PROCESS
   wire [3:0] symStart = i_symStart;
@@ -94,13 +120,14 @@ module pucch (
   wire       lenSR = i_lenSR;
 
   wire [3:0] m0 = i_m0;
+
+  //! mcs = 0 except for PUCCH format 0 when it depends on the information to be transmitted according to clause 9.2 of [5, TS 38.213].
   reg  [3:0] mcs;
-  always_comb begin
-    mcs = 4'bx;
+  always_comb begin : sel_mcs
     case (i_pucch_format)
-      0: mcs = F0_csTable(ack, lenACK, sr, lenSR);
-      1: mcs = 0;
-      default: mcs = 4'bx;
+      0:          mcs = F0_csTable(ack, lenACK, sr, lenSR);
+      1, 2, 3, 4: mcs = 0;
+      default:    mcs = 4'bx;
     endcase
   end
   wire [7:0] nslot = i_nslot;
@@ -113,9 +140,7 @@ module pucch (
   wire [15:0] rnti = i_rnti;
   wire [1:0] uciCW = i_uciCW;
   wire [2:0] sf = i_sf;
-  // wire [ 3:0] nIRB = i_nIRB;
   wire [UNKNOWN-1:0] n0 = i_occi;
-  // wire [ 1:0] btilde = (uciCW ^ scramble_f2_bit);
 
   // region u, v
   // pucch-GroupHopping = 'neither' =>
@@ -124,8 +149,8 @@ module pucch (
   // v   = 0                                --- Base sequence numbers
   // u   = (fgh + fss) mod 30 = nid mod 30  --- Base sequence group numbers
   // ncs = c seq                            --- Hopping/cell identity specific cyclic shifts
-  localparam v = 0;
-  wire [15:0] u;  // u = nid mod 30
+  localparam v = 0;  //! v = 0 (pucch-GroupHopping = 'neither')
+  wire [15:0] u;  //! u = nid mod 30 (pucch-GroupHopping = 'neither')
 
   localparam DIVIDER_30 = 30;
   localparam ONE_DIV_DIVIDER_30 = 34'h111111111;
@@ -146,11 +171,10 @@ module pucch (
   reg  [1:0] lenUCI;
 
   // Check ack and sr inputs and get the control information
-  always_comb begin
+  always_comb begin : sel_UCI
     // Default values
     uciIn  = 0;
     lenUCI = 0;
-
     if (!pucch_empty_seq) begin
       if (lenACK == 0) begin  // Positive SR transmission
         uciIn  = 0;
@@ -171,10 +195,6 @@ module pucch (
   reg       pi2bpsk_lsb;  //! Input index lsb for Pi/2 BPSK modulation
   reg [1:0] b_qpsk;  //! Input bit for QPSK modulation
   always_comb begin : sel_modulation_input
-    b_bpsk      = 1'dx;
-    b_pi2bpsk   = 1'dx;
-    pi2bpsk_lsb = 1'dx;
-    b_qpsk      = 2'dx;
     case (i_pucch_format)
       1: begin
         b_bpsk = uciIn[0];
@@ -215,7 +235,7 @@ module pucch (
       .o_cyc_part(d_qpsk)
   );
 
-  wire [4:0] d_pi2bpsk;
+  wire [4:0] d_pi2bpsk;  //! Output angle coresponds to pi/2-BPSK complex point
   pi2bpsk_cyc #(
       .CYC_DIV(CYC_DIV)
   ) pi2bpsk_cyc_dut (
@@ -251,52 +271,6 @@ module pucch (
     endcase
   end
   // endregion PSK modulation
-
-  // region Discrete Fourier Transform (Format 3)
-  reg signed  [   15:0] dft_i_re;
-  reg signed  [   15:0] dft_i_im;
-  reg                   dft_start;
-
-  wire        [    4:0] dft_k;
-  wire        [    4:0] dft_n;
-  wire signed [15+12:0] dft_o_re;
-  wire signed [15+12:0] dft_o_im;
-  wire                  dft_done_one;
-  wire                  dft_done_all;
-  wire                  dft_o_valid;
-
-  always_comb begin : sel_dft_input
-    case (i_pucch_format)
-      3: begin
-        dft_i_re = point_re;
-        dft_i_im = point_im;
-      end
-      default: begin
-        dft_i_re = 16'dx;
-        dft_i_im = 16'dx;
-      end
-    endcase
-  end
-
-
-  dft_12 dft_12_dut (
-      .clk(clk),
-      .rst(rst),
-
-      .i_re(dft_i_re),
-      .i_im(dft_i_im),
-      .i_start(dft_start),
-
-      .o_k (dft_k),
-      .o_n (dft_n),
-      .o_re(dft_o_re),
-      .o_im(dft_o_im),
-
-      .o_done_one(dft_done_one),
-      .o_done_all(dft_done_all),
-      .o_valid   (dft_o_valid)
-  );
-  // endregion Discrete Fourier Transform (Format 3)
 
   // region R: FSM
   localparam sIDLE = 0;  //! Waiting for start conditions to be met.
@@ -385,7 +359,7 @@ module pucch (
 
             end
           endcase
-          index_odd <= !index_odd;
+          // index_odd <= !index_odd;
         end
         sDONE: begin
 
@@ -626,56 +600,72 @@ module pucch (
   // lowPAPRS = Alpha * n + base seq r
   wire [15:0] lowPAPRS_cyc_24 = (alpha_cyc_24 * base_seq_n) + base_seq_cyc_24;
 
-  reg  [15:0] point_cyc_24_no_mod_24;
+  // reg  [15:0] point_cyc_24_no_mod_24;
   always_comb begin : sel_cyc_24_input
     case (i_pucch_format)
-      0: point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;  // x = lowPAPRS
+      0: gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = lowPAPRS_cyc_24;  // x = lowPAPRS
       1: begin
         // z = wi(m) * y(n) = w * d * lowPAPRS
-        if (spread_is_supported) point_cyc_24_no_mod_24 = spread_wi_phi_cyc_24 + cyc_24_modulation + lowPAPRS_cyc_24;
-        else point_cyc_24_no_mod_24 = 'dx;
+        if (spread_is_supported) gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = spread_wi_phi_cyc_24 + cyc_24_modulation + lowPAPRS_cyc_24;
+        else gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = 'dx;
       end
-      2: point_cyc_24_no_mod_24 = cyc_24_modulation + spread_wn_i_cyc_24;
-      3: point_cyc_24_no_mod_24 = cyc_24_modulation;  // + ((12 * 24) - (dft_k * dft_n * 2));
+      2, 3, 4: begin
+        gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = cyc_24_modulation + spread_wn_cyc_24[0];
+        gen_parallel_pucch_234[1].point_cyc_24_no_mod_24 = cyc_24_modulation + spread_wn_cyc_24[1];
+        gen_parallel_pucch_234[2].point_cyc_24_no_mod_24 = cyc_24_modulation + spread_wn_cyc_24[2];
+        gen_parallel_pucch_234[3].point_cyc_24_no_mod_24 = cyc_24_modulation + spread_wn_cyc_24[3];
+      end
+      3: gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = cyc_24_modulation;  // + ((12 * 24) - (dft_k * dft_n * 2));
       default: begin
-        point_cyc_24_no_mod_24 = 16'bx;
+        gen_parallel_pucch_234[0].point_cyc_24_no_mod_24 = 16'bx;
       end
     endcase
   end
 
   reg [2:0] spread_wn_i;
-  reg [4*4-1:0] spread_wn_i_cyc_24;
+  reg [5*4-1:0] spread_wn_i_cyc_24;
+  wire [4:0] spread_wn_cyc_24[0:3];
   always_comb begin
     case (i_pucch_format)
       2:       spread_wn_i_cyc_24 = F2_orthogonal(sf, n0, nIRB);
-      3, 4:    spread_wn_i_cyc_24 = 0;
-      default: spread_wn_i_cyc_24 = 0;
+      3, 4:    spread_wn_i_cyc_24 = F34_blockWiseSpreading(sf, occi);
+      default: spread_wn_i_cyc_24 = 16'dz;
     endcase
   end
 
-  localparam DIVIDER_24 = 24;
-  localparam ONE_DIV_DIVIDER_24 = 34'h155555555;
-  mod_comb #(
-      .DIVIDER        (DIVIDER_24),
-      .ONE_DIV_DIVIDER(ONE_DIV_DIVIDER_24)
-  ) mod_comb_24 (
-      .i_dividend(point_cyc_24_no_mod_24),
-      .o_result  (point_cyc_24)
-  );
-  // endregion angles (alpha, base seq, spreading (orthogonal))
+  genvar wn_i_index;
+  for (wn_i_index = 0; wn_i_index < 4; wn_i_index = wn_i_index + 1) begin : gen_parallel_pucch_234
+    assign spread_wn_cyc_24[wn_i_index] = spread_wn_i_cyc_24[(wn_i_index+1)*5-1:wn_i_index*5];
 
 
-  // region complex value
-  wire        [ 4:0] point_cyc_24;
-  wire signed [15:0] point_re;
-  wire signed [15:0] point_im;
-  assign o_pucch_re = point_re;
-  assign o_pucch_im = point_im;
-  cyc_24 cyc_24_dut (
-      .i_point_index(point_cyc_24),
-      .o_point_re(point_re),
-      .o_point_im(point_im)
-  );
+    reg [15:0] point_cyc_24_no_mod_24;
+
+    localparam DIVIDER_24 = 24;
+    localparam ONE_DIV_DIVIDER_24 = 34'h155555555;
+    mod_comb #(
+        .DIVIDER        (DIVIDER_24),
+        .ONE_DIV_DIVIDER(ONE_DIV_DIVIDER_24)
+    ) mod_comb_24 (
+        .i_dividend(point_cyc_24_no_mod_24),
+        .o_result  (point_cyc_24)
+    );
+    // endregion angles (alpha, base seq, spreading (orthogonal))
+
+
+    // region complex value
+    wire        [ 4:0] point_cyc_24;
+    wire signed [15:0] point_re;
+    wire signed [15:0] point_im;
+    cyc_24 cyc_24_dut (
+        .i_point_index(point_cyc_24),
+        .o_point_re(point_re),
+        .o_point_im(point_im)
+    );
+
+    assign o_pucch_re[wn_i_index] = point_re;
+    assign o_pucch_im[wn_i_index] = point_im;
+
+  end  // end gen_parallel_pucch_234
 
   // endregion complex value
 
@@ -757,8 +747,6 @@ module pucch (
     end
   endfunction
 
-  localparam nRE = 8;  //! Number of RE per PRB available for PUCCH
-
   //! return orthogonal sequence wn(i) (cyc_24) at index i
   //! 
   //! function wn = spreadingSequence(sf,occi)
@@ -790,39 +778,68 @@ module pucch (
   //!     wn = w(occi+1,:);
   //! 
   //! end
-  function [4*4-1:0] F2_orthogonal;
+  function [5*4-1:0] F2_orthogonal;
     input [2:0] sf;  // sf = {2,4} for F2,F4 or {1,2,4} for F3
     input [1:0] n0;  // occi last 2 bits
     input [1:0] nIRB;  // nIRB last 2 bits
     reg [1:0] n;
     begin
       // n = (n0 + nIRB) mod sf
-      n = n0 + nIRB;
+      n = (n0 + nIRB);
       if (sf == 2) n = {1'b0, n[0]};  // mod 2
       // else n = n; // mod 4
+
       // $display("n mod sf = n mod %1d = %1d", sf, n);
 
       case (sf)
-        1:       F2_orthogonal = {4'dz, 4'dz, 4'd00, 4'd00};
+        0:       F2_orthogonal = {5'dz, 5'dz, 5'dz, 5'd00};  // Disabled
+        // 1:       F2_orthogonal = {5'dz, 5'dz, 5'd00, 5'd00};
         2: begin
           case (n)
-            0: F2_orthogonal = {4'dz, 4'dz, 4'd00, 4'd00};
-            1: F2_orthogonal = {4'dz, 4'dz, 4'd12, 4'd00};
-            default: F2_orthogonal = 16'dz;
+            0: F2_orthogonal = {5'dz, 5'dz, 5'd00, 5'd00};
+            1: F2_orthogonal = {5'dz, 5'dz, 5'd12, 5'd00};
+            default: F2_orthogonal = 20'dz;
           endcase
         end
         4: begin
           case (n)
-            0:       F2_orthogonal = {4'd00, 4'd00, 4'd00, 4'd00};
-            1:       F2_orthogonal = {4'd12, 4'd00, 4'd12, 4'd00};
-            2:       F2_orthogonal = {4'd12, 4'd12, 4'd00, 4'd00};
-            3:       F2_orthogonal = {4'd00, 4'd12, 4'd12, 4'd00};
-            default: F2_orthogonal = 16'dz;
+            0:       F2_orthogonal = {5'd00, 5'd00, 5'd00, 5'd00};
+            1:       F2_orthogonal = {5'd12, 5'd00, 5'd12, 5'd00};
+            2:       F2_orthogonal = {5'd12, 5'd12, 5'd00, 5'd00};
+            3:       F2_orthogonal = {5'd00, 5'd12, 5'd12, 5'd00};
+            default: F2_orthogonal = 20'dz;
           endcase
         end
-        default: F2_orthogonal = 16'dz;
+        default: F2_orthogonal = 20'dz;
       endcase
+    end
+  endfunction
 
+  function [5*4-1:0] F34_blockWiseSpreading;
+    input [2:0] sf;
+    input [2:0] occi;
+    begin
+      case (sf)
+        0: F34_blockWiseSpreading = {5'dx, 5'dx, 5'dx, 5'd0};  //! Disabled
+        1: F34_blockWiseSpreading = {5'dx, 5'dx, 5'dx, 5'd0};  //! Disabled
+        2: begin
+          case (occi)
+            0: F34_blockWiseSpreading = {5'dx, 5'dx, 5'd0, 5'd0};
+            1: F34_blockWiseSpreading = {5'dx, 5'dx, 5'd12, 5'd0};
+            default: F34_blockWiseSpreading = 20'dz;
+          endcase
+        end
+        4: begin
+          case (occi)
+            0: F34_blockWiseSpreading = {5'd00, 5'd00, 5'd00, 5'd00};
+            1: F34_blockWiseSpreading = {5'd06, 5'd12, 5'd18, 5'd00};
+            2: F34_blockWiseSpreading = {5'd12, 5'd00, 5'd12, 5'd00};
+            3: F34_blockWiseSpreading = {5'd18, 5'd12, 5'd06, 5'd0};
+            default: F34_blockWiseSpreading = 20'dz;
+          endcase
+        end
+        default: F34_blockWiseSpreading = 20'dz;
+      endcase
     end
   endfunction
 
